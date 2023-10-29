@@ -2,6 +2,14 @@
 
 A joystick app for controlling Wall-e Robot, made with Vue.js (Quasar Framework). Uses the nippleJs joystick library.
 
+# On Raspberry
+You will need to setup the following:
+(update first) sudo apt-get update && upgrade
+sudo apt-get install python3-flask
+(if using camera) sudo apt-get install python3-opencv
+
+
+
 ## Install the dependencies
 ```bash
 yarn
