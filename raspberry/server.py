@@ -1,13 +1,13 @@
 import numpy as np
 from flask import Flask, request, jsonify, Response
 from time import sleep
-from adafruit_servokit import ServoKit
+#from adafruit_servokit import ServoKit
 from flask_cors import CORS
 import cv2
 import ctypes
 from ctypes import cdll, c_void_p, c_int
 
-lib = cdll.LoadLibrary("./build/app.so")
+lib = cdll.LoadLibrary("./src/libwalle.so")
 
 class Image(ctypes.Structure):
     _fields_ = [("addr", ctypes.POINTER(ctypes.c_ubyte)),
@@ -18,15 +18,15 @@ class Color(ctypes.Structure):
     _fields_ = [("b", ctypes.c_ubyte),
                 ("g", ctypes.c_ubyte),
                 ("r", ctypes.c_ubyte)]
-lib.modify_image.argtypes = (ctypes.POINTER(Image), ctypes.c_int, ctypes.c_int, Color)
-lib.run_impulse.argtypes = [ctypes.POINTER(Image), Color]
-lib.run_impulse.restype = ctypes.c_int32
-kit = ServoKit(channels=16)
+#lib.modify_image.argtypes = (ctypes.POINTER(Image), ctypes.c_int, ctypes.c_int, Color)
+#lib.run_impulse.argtypes = [ctypes.POINTER(Image), Color]
+#lib.run_impulse.restype = ctypes.c_int32
+#kit = ServoKit(channels=16)
 #lib.setupMotor.argtypes = (ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int)
-lib.setupMotor()
-lib.updateTracks.argtypes = [ctypes.c_int, ctypes.c_int]
-lib.changeSpeed.argtypes = [ctypes.c_int, ctypes.c_int]
-#lib.walle.argtypes = [POINTER(c_int)]
+#lib.setupMotor()
+#lib.updateTracks.argtypes = [ctypes.c_int, ctypes.c_int]
+lib.sendData.argtypes = [ctypes.c_int]
+lib.setup()
 
 camera = cv2.VideoCapture(0)
 camera.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
@@ -70,22 +70,23 @@ def control_movement(angle, key, distance):
     #    print(round(new_angle))
     #thres = 0.25
     if key == 9:
-        lib.updateTracks(angle, distance)
-        print(distance)
+        #lib.updateTracks(angle, distance)
+        lib.sendData(angle)
+        #print(distance)
         #lib.changeSpeed(100, 100)
     #else:
     #    kit.servo[key].angle = angle
 
-def run_impulse(img, box_color):
-    lib.run_impulse.argtypes = [ctypes.POINTER(Image), Color]
-    lib.run_impulse.restype = ctypes.c_int32
+#def run_impulse(img, box_color):
+    #lib.run_impulse.argtypes = [ctypes.POINTER(Image), Color]
+    #lib.run_impulse.restype = ctypes.c_int32
 
-    ret = lib.run_impulse(ctypes.byref(img), box_color)
-    if ret != 0:
-        print(f"Error running impulse: {ret}")
-        return None
+    #ret = lib.run_impulse(ctypes.byref(img), box_color)
+    #if ret != 0:
+        #print(f"Error running impulse: {ret}")
+        #return None
 
-    return ret
+    #return ret
 
 def gen_frames():
     while True:
@@ -111,9 +112,9 @@ def gen_frames():
             yield (b'--frame\r\n'
                 b'Content-Type: image/jpeg\r\n\r\n' + new_frame + b'\r\n')
 
-while True:
+#while True:
     #if not connected:
-    lib.walle()
+    #lib.walle()
     #else:
     #if time.time() - connect_time > 30:
 
@@ -137,7 +138,7 @@ def get_values():
     key = data['servo']
     dist = data['distance']
     control_movement(angle, key, dist)
-    #return 'Moved servo'
+    return 'Moved servo'
 
 @app.route('/check')
 def check_connect():
@@ -149,6 +150,8 @@ def check_connect():
 @app.route('/options')
 def get_options():
     return movement
+
+#threading.Thread(target=walle).start()
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)

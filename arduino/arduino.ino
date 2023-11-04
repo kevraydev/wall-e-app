@@ -21,6 +21,7 @@
 PCA9685 pwmController;
 
 Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_RST);
+unsigned long last = 0;
 
 float batVolt_Max = 12.3;
 float batVolt_Min = 6;
@@ -61,15 +62,19 @@ void loop() {
       //setServoAngle(1, pos);
       updateState(pos);
       if(pos != 0)
-        changeSpeed(255,255);
+        changeSpeed(100,100);
     }
     else {
         Serial.read();
     }
     delay(10);
   }
-  displaySolar();
-  delay(100);
+
+  if((unsigned long)(millis() - last) >= 2000) {
+    displaySolar();
+    last = millis();
+  }
+
 }
 
 float mapf(float x, float in_min, float in_max, float out_min, float out_max) 
@@ -91,7 +96,6 @@ void setServoAngle(int channel, float degree) {
 }
 
 int BattVoltage() {
-  
   int batValue = analogRead(A0);
   float voltage = batValue * (3.2 / 1023.0);
   float actVoltage = mapf(voltage, 1.5, 3, batVolt_Min, batVolt_Max);
@@ -101,8 +105,6 @@ int BattVoltage() {
 
 void displaySolar() {
   int x = BattVoltage();
-  //int x = map(value, 1, 100, 1, 12);
-
   int barArr[12] = {104, 96, 88, 80, 72, 64, 56, 48, 40, 32, 24, 16};
   if(x == 1)
     tft.fillRoundRect(44, 112, 84, 15, 1, ST77XX_RED);
