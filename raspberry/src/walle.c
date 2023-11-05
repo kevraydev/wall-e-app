@@ -11,9 +11,12 @@ void setup()
 }
 
 
-void sendData(int data)
+void sendData(int angle, int distance, int ctrlId)
 {
-    serialPrintf(serial_port, "%d", data);
+    char strData[20];
+    sprintf(strData, "%03d %02d %02d", angle, distance, ctrlId);
+
+    serialPuts(serial_port, strData);
 }
 
 void closeSerial()

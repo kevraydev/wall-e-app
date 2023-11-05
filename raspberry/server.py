@@ -1,7 +1,6 @@
 import numpy as np
 from flask import Flask, request, jsonify, Response
 from time import sleep
-#from adafruit_servokit import ServoKit
 from flask_cors import CORS
 import cv2
 import ctypes
@@ -21,11 +20,7 @@ class Color(ctypes.Structure):
 #lib.modify_image.argtypes = (ctypes.POINTER(Image), ctypes.c_int, ctypes.c_int, Color)
 #lib.run_impulse.argtypes = [ctypes.POINTER(Image), Color]
 #lib.run_impulse.restype = ctypes.c_int32
-#kit = ServoKit(channels=16)
-#lib.setupMotor.argtypes = (ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int)
-#lib.setupMotor()
-#lib.updateTracks.argtypes = [ctypes.c_int, ctypes.c_int]
-lib.sendData.argtypes = [ctypes.c_int]
+lib.sendData.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.c_int]
 lib.setup()
 
 camera = cv2.VideoCapture(0)
@@ -54,28 +49,8 @@ movement = [
     ]
 
 
-def map_range(v, a, b, c, d):
-       return (v-a) / (b-a) * (d-c) + c
-
 def control_movement(angle, key, distance):
-    #if distance != 0:
-    #    new_angle = 0
-    #    if angle >= 0 and angle <= 180:
-    #        #up
-    #        new_angle = map_range(distance, 1, 40, 90, 180)
-    #    else:
-            #down
-    #        new_angle = map_range(distance, 1, 40, 90, 0)
-    #    kit.servo[key].angle = round(new_angle)
-    #    print(round(new_angle))
-    #thres = 0.25
-    if key == 9:
-        #lib.updateTracks(angle, distance)
-        lib.sendData(angle)
-        #print(distance)
-        #lib.changeSpeed(100, 100)
-    #else:
-    #    kit.servo[key].angle = angle
+    lib.sendData(angle, distance, key)
 
 #def run_impulse(img, box_color):
     #lib.run_impulse.argtypes = [ctypes.POINTER(Image), Color]
@@ -149,7 +124,7 @@ def check_connect():
 
 @app.route('/options')
 def get_options():
-    return movement
+    return jsonify(movement)
 
 #threading.Thread(target=walle).start()
 
