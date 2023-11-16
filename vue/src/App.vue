@@ -5,7 +5,7 @@
 <script>
 import { defineComponent } from 'vue'
 import { useQuasar } from 'quasar'
-
+import "animate.css"
 export default defineComponent({
   name: 'App',
   setup() {

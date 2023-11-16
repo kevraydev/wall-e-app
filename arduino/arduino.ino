@@ -8,6 +8,8 @@
 #include <Wire.h>
 #include <SoftwareSerial.h>
 #include <DFRobotDFPlayerMini.h>
+//#include "queue.h"
+#define constrain(amt,low,high) ((amt)<(low)?(low):((amt)>(high)?(high):(amt)))
 
 #define TFT_CS 8
 #define TFT_RST 12 
@@ -24,12 +26,30 @@ SoftwareSerial softSerial(16, 15);
 DFRobotDFPlayerMini mPlayer;
 
 PCA9685 pwmController;
+//cQueue q;
+//Queue* li = q.initQueue();
 
 Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_RST);
 unsigned long last = 0;
+unsigned long lastUpdate = 0;
 
-//float batVolt_Max = 12.3;
-//float batVolt_Min = 6;
+//Control ID - Default POS - Current POS - Min POS - Max POS
+int controls[9][5] = {
+  {0, 90, 90, 10, 175},//Head
+  {1, 90, 90, 25, 170},//Neck
+  {2, 95, 95, 50, 95},//Left Eye
+  {3, 95, 95, 65, 95},//Right Eye
+  {4, 180, 180, 1, 180},//Left Track
+  {5, 130, 130, 1, 180},//Left Arm
+  {6, 1, 1, 1, 180},//Right Track
+  {7, 55, 55, 1, 180},//Right Arm
+  {8, 130, 130, 20, 170},//Bottom Neck
+};
+
+uint16_t leftSpeed;
+uint16_t rightSpeed;
+int motorState = 1;
+
 
 void setup(void) {
   Serial.begin(9600);
@@ -37,7 +57,7 @@ void setup(void) {
   softSerial.begin(9600);
   mPlayer.begin(softSerial);
   mPlayer.volume(23);
-  tft.initR(INITR_144GREENTAB); // Init ST7735R chip, green tab
+  tft.initR(INITR_144GREENTAB); // Init ST7735R chip
   
   uint16_t time = millis();
   tft.fillScreen(ST77XX_BLACK);
@@ -59,8 +79,11 @@ void setup(void) {
   pinMode(IN4, OUTPUT);
 
   updateState(0);
-  delay(2000);
+  delay(500);
   mPlayer.play(3);
+  delay(2500);
+  initPOS();
+  delay(2500);
 }
 
 void loop() {
@@ -72,38 +95,148 @@ void loop() {
     int distance = dataIn.substring(4, 6).toInt();
     int ctrlId = dataIn.substring(7, 9).toInt();
     
-    if(angle > 10)
-      setServoAngle(ctrlId, angle);
-      else {
+    if(angle > 0) {
+
+        updateControl(angle, distance, ctrlId);
+    }
+    else {
         Serial.read();
     }
 
-    delay(10);
+    delay(3);
   }
 
-  if((unsigned long)(millis() - last) >= 5000) {
+  if((unsigned long)(millis() - last) >= 8000) {
     displaySolar();
     last = millis();
   }
 
+  updateTracks();
+
 }
+
+
+/*
+void queueMovement(int a, int c)
+{
+  if(queueNotEmpty(li))
+  {
+    if(q.updateKey(li, c, a) < 0)
+      q.push(li, c, a);
+  }
+  else
+    q.push(li, c, a);
+}
+
+void updateMovement()
+{
+  int c = q.getCount(li);
+  if(c != 0)
+  {
+    for(int i = 0; i < c; i++)
+    {
+
+    }
+  }
+}
+*/
+void updateControl(int a, int d, int c)
+{
+  if(c > 8) {
+    setTrackDirection(a, d);
+   /* switch(c)
+    {
+      case 9:
+              setTrackDirection(a, d);
+              break;
+      case 10:
+              break;
+      case 11:  
+              break;
+    }*/
+  }
+  else {
+    setServoAngle(c, a);
+  }
+}
+
 
 float mapf(float x, float in_min, float in_max, float out_min, float out_max) 
 {
   return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
 
-void setServoAngle(int channel, float degree) {
+void setServoAngle(int channel, float degree)
+{
   uint16_t pulseWidth = degree * (512 - 102) / 180 + 102;
   pwmController.setChannelPWM(channel, pulseWidth); 
 }
 
+void initPOS()
+{
+  
+  for(int i = 0; i <= 8; i++)
+  {
+    setServoAngle(controls[i][0], controls[i][1]); 
+    delay(250);
+  }
+}
+
+
+void updateTracks()
+{
+  if((unsigned long)(millis() - lastUpdate) >= 500) {
+    lastUpdate = millis();
+  
+  if(leftSpeed != 0 && rightSpeed != 0)
+  {
+    changeSpeed(leftSpeed, rightSpeed);
+    leftSpeed -= leftSpeed >> 4;
+    rightSpeed -= rightSpeed >> 4;
+  }
+  else if(motorState != 0)
+  {
+    updateState(0);
+    changeSpeed(0, 0);
+    }
+  }
+}
+
+void setTrackDirection(int angle, int distance)
+{
+    int speed = mapf(distance, 0, 40, 5, 12);
+
+    float rads = (angle * PI)/180;
+    float cosA = cos(rads);
+    float sinA = sin(rads);
+    float absCos = abs(cosA);
+    //int adj = mapf(distance, 0, 40, 1, 10);
+
+    if(absCos > 0.5)
+    {
+      if(cosA > 0)
+        leftSpeed += speed;
+      else
+        rightSpeed += speed;
+    }
+    else
+    {
+      leftSpeed += speed;
+      rightSpeed += speed;
+    }
+
+    if(sinA > 0)
+      updateState(1);
+    else
+      updateState(2);
+    leftSpeed = constrain(leftSpeed, 50, 100);
+    rightSpeed = constrain(rightSpeed, 50, 100);
+}
+
 int BattVoltage() {
   int batValue = analogRead(A0);
-  float voltage = batValue * (3.2 / 1023.0);
-  //float actVoltage = mapf(voltage, 1.5, 3.2, batVolt_Min, batVolt_Max);
-  //int level = mapf(actVoltage, batVolt_Min, batVolt_Max, 1, 12);
-  int level = mapf(voltage, 1.5, 3.2, 1, 12);
+  float voltage = batValue * (2.55 / 1023.0);
+  int level = mapf(voltage, 1.25, 2.55, 1, 12);
   return level;
 }
 
@@ -126,6 +259,9 @@ void displaySolar() {
 
 void updateState(int state)
 {
+  if(motorState != state)
+  {
+    motorState = state;
     switch(state)
     {
     case 0:
@@ -160,6 +296,7 @@ void updateState(int state)
         digitalWrite(IN4, HIGH);
         break;
     }
+  }
 }
 
 void changeSpeed(int left, int right)

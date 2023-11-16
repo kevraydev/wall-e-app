@@ -1,10 +1,12 @@
 <template>
     <div class="column items-center">
+        <div class="animate__animated animate__fadeInDown animate__delay-0.5s">
         <img
         alt="Wall-e logo"
         src="~assets/walle_logo_sm.png"
         class="centeredImg"
         >
+    </div>
         <div id="nav" class="fit row justify-center q-pt-md">
             <router-link to="/" class="routeLinks">
                 <q-btn outline color="primary" label="App" size="1.2rem" />
@@ -20,6 +22,7 @@
 </template>
 <script setup>
 import { computed } from 'vue'
+
     const props = defineProps(['status'])
 
     const connected = computed(() => props.status)

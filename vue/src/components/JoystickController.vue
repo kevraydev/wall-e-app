@@ -25,21 +25,21 @@ import { app, getJoySticks, getVideo } from './js/StoreController'
   let jstTag = {}
 
       const sendJoystickValue = (id, ctrl, data) => {
-          if(!jstTag[id]) {
-            jstTag[id] = true
-            let angle = (Math.round(data.angle.degree));
+         // if(!jstTag[id]) {
+         //   jstTag[id] = true
+            let angle = (Math.round(data.angle.degree))
             let distance = Math.round(data.distance)
             if(distance === 0)
               distance = 1
-            setTimeout(() => {
-              jstTag[id] = false
+           // setTimeout(() => {
+           //   jstTag[id] = false
               console.log(`stickId: ${id}, Angle: ${angle}, cos: ${Math.sin(angle)}, Distane: ${distance}, Ctrl: ${ctrl}`)
               controlServo(app.ip.value.ipaddress, app.ip.value.port, ctrl, angle, distance)
              // if(!status.value) {
               //  tryConnect()
              // }
-            }, 150)
-          }
+           // }, 20)
+          //}
       }
 
       const addJoystick = (el, joystickId, restlock, ctrlNum) => {
