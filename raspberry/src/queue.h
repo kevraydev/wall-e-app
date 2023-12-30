@@ -18,11 +18,11 @@ Item* newItem(int key, int value);
 
 Queue* initQueue();
 
-void push(Queue* queue, int key, int value);
+void enqueue(Queue* queue, int key, int value);
 
-int popKey(Queue* queue, int key);
+int getByKey(Queue* queue, int key);
 
-void popAll(Queue* queue);
+void dequeueAll(Queue* queue);
 
 int queueNotEmpty(Queue* queue);
 

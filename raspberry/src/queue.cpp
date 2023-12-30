@@ -14,7 +14,7 @@ Queue* cQueue::initQueue()
     return queue;
 }
 
-void cQueue::push(Queue* queue, int key, int value)
+void cQueue::enqueue(Queue* queue, int key, int value)
 {
     Item* item = newItem(key, value);
     if(queue->rear)
@@ -26,7 +26,7 @@ void cQueue::push(Queue* queue, int key, int value)
         queue->front = queue->rear = item;
 }
 
-int cQueue::popKey(Queue* queue, int key)
+int cQueue::getByKey(Queue* queue, int key)
 {
     Item* temp = queue->front;
     Item* prevItem = NULL;
@@ -49,7 +49,7 @@ int cQueue::popKey(Queue* queue, int key)
     return 0;
 }
 
-void cQueue::popAll(Queue* queue)
+void cQueue::dequeueAll(Queue* queue)
 {
     while(queue->front)
     {

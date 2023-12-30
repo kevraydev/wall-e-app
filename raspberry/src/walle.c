@@ -33,10 +33,10 @@ void queueMovement(int a, int c)
   if(queueNotEmpty(li))
   {
     if(q.updateKey(li, c, a) < 0)
-      q.push(li, c, a);
+      q.enqueue(li, c, a);
   }
   else
-    q.push(li, c, a);
+    q.enqueue(li, c, a);
 }
 
 void updateMovement()
