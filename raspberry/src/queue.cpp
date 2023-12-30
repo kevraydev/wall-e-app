@@ -1,4 +1,5 @@
 #include "queue.h"
+
 Item* cQueue::newItem(int key, int value)
 {
     Item* item = malloc(sizeof(Item));

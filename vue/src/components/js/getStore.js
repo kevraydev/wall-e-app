@@ -1,3 +1,4 @@
+// @ts-check
 import { useSettingStore } from '../../stores/settingsStore'
 import { computed, reactive } from 'vue'
 
@@ -15,7 +16,7 @@ export default function getStore() {
         }
     }))
     const appSettings = computed(() => settingStore.getSettingById(1))
-    const inputIP = reactive({ 
+    const inputIP = reactive({
         url: appSettings.value.ipaddress,
         port: appSettings.value.port
     })

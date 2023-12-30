@@ -1,10 +1,8 @@
 #include <Adafruit_GFX.h>    // Core graphics library
 #include <Adafruit_ST7735.h> // Hardware-specific library for ST7735
 #include <SPI.h>
-#include <PCA9685.h>
 #include <Fonts/Nimbus_Sans_L_Bold_9.h>
 #include "WalleIcon.h"
-#include "PCA9685.h"
 #include <Wire.h>
 #include <SoftwareSerial.h>
 #include <DFRobotDFPlayerMini.h>
@@ -26,8 +24,6 @@ SoftwareSerial softSerial(16, 15);
 DFRobotDFPlayerMini mPlayer;
 
 PCA9685 pwmController;
-//cQueue q;
-//Queue* li = q.initQueue();
 
 Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_RST);
 unsigned long last = 0;
@@ -40,7 +36,7 @@ int controls[9][5] = {
   {2, 95, 95, 50, 95},//Left Eye
   {3, 95, 95, 65, 95},//Right Eye
   {4, 180, 180, 1, 180},//Left Track
-  {5, 130, 130, 1, 180},//Left Arm
+  {5, 120, 130, 1, 180},//Left Arm
   {6, 1, 1, 1, 180},//Right Track
   {7, 55, 55, 1, 180},//Right Arm
   {8, 130, 130, 20, 170},//Bottom Neck
@@ -58,10 +54,9 @@ void setup(void) {
   mPlayer.begin(softSerial);
   mPlayer.volume(23);
   tft.initR(INITR_144GREENTAB); // Init ST7735R chip
-  
-  uint16_t time = millis();
+  //Serial.println("started");
+
   tft.fillScreen(ST77XX_BLACK);
-  time = millis() - time;
   tft.setFont(&Nimbus_Sans_L_Bold_9);
   tft.setTextColor(ST77XX_YELLOW);
   tft.setCursor(1, 10);
@@ -79,11 +74,11 @@ void setup(void) {
   pinMode(IN4, OUTPUT);
 
   updateState(0);
-  delay(500);
-  mPlayer.play(3);
-  delay(2500);
+  delay(100);
+  //mPlayer.play(3);
+  delay(1500);
   initPOS();
-  delay(2500);
+  delay(1500);
 }
 
 void loop() {
@@ -92,18 +87,15 @@ void loop() {
     dataIn = Serial.readStringUntil('\n');
     
     int angle = dataIn.substring(0, 3).toInt();
-    int distance = dataIn.substring(4, 6).toInt();
-    int ctrlId = dataIn.substring(7, 9).toInt();
+    int ctrlId = dataIn.substring(4, 6).toInt();
+    //int ctrlId = dataIn.substring(7, 9).toInt();
     
     if(angle > 0) {
 
-        updateControl(angle, distance, ctrlId);
-    }
-    else {
-        Serial.read();
+        updateControl(angle, ctrlId);
     }
 
-    delay(3);
+    delay(1);
   }
 
   if((unsigned long)(millis() - last) >= 8000) {
@@ -115,45 +107,21 @@ void loop() {
 
 }
 
-
-/*
-void queueMovement(int a, int c)
-{
-  if(queueNotEmpty(li))
-  {
-    if(q.updateKey(li, c, a) < 0)
-      q.push(li, c, a);
-  }
-  else
-    q.push(li, c, a);
-}
-
-void updateMovement()
-{
-  int c = q.getCount(li);
-  if(c != 0)
-  {
-    for(int i = 0; i < c; i++)
-    {
-
-    }
-  }
-}
-*/
-void updateControl(int a, int d, int c)
+void updateControl(int a, int c)
 {
   if(c > 8) {
-    setTrackDirection(a, d);
-   /* switch(c)
+    //setTrackDirection(a, d);
+    switch(c)
     {
       case 9:
               setTrackDirection(a, d);
               break;
       case 10:
+              updateState(0);
               break;
       case 11:  
               break;
-    }*/
+    }
   }
   else {
     setServoAngle(c, a);
@@ -168,6 +136,11 @@ float mapf(float x, float in_min, float in_max, float out_min, float out_max)
 
 void setServoAngle(int channel, float degree)
 {
+  if(degree < controls[channel][3])
+    degree = controls[channel][3];
+  else if(degree > controls[channel][4])
+    degree = controls[channel][4];
+  controls[channel][2] = degree;
   uint16_t pulseWidth = degree * (512 - 102) / 180 + 102;
   pwmController.setChannelPWM(channel, pulseWidth); 
 }
@@ -180,17 +153,50 @@ void initPOS()
     setServoAngle(controls[i][0], controls[i][1]); 
     delay(250);
   }
+  delay(250);
+  eyeCalibration();
+}
+
+
+void eyeCalibration()
+{
+  int delayAmt = 500;
+  if(controls[3][2] != controls[3][4])
+    setServoAngle(3, controls[3][4]);
+  if(controls[2][2] != controls[2][4])
+    setServoAngle(2, controls[2][4]);
+
+  if(controls[0][2] != 90)
+  {
+    setServoAngle(0, 90);
+    delay(1000);
+  }
+
+  setServoAngle(2, controls[2][3]);//Left down
+  delay(delayAmt);
+  setServoAngle(3, controls[3][3]);//Right down
+  delay(delayAmt);
+  setServoAngle(2, controls[2][4]);//Left up
+  delay(delayAmt);
+  setServoAngle(3, controls[3][4]);//Down up
+  delay(delayAmt);
+  setServoAngle(3, controls[3][3]);//Left and Right Down
+  setServoAngle(2, controls[2][3]);
+  delay(delayAmt+200);
+  setServoAngle(3, controls[3][4]);//Left and Right Up
+  setServoAngle(2, controls[2][4]);
 }
 
 
 void updateTracks()
 {
   if((unsigned long)(millis() - lastUpdate) >= 500) {
-    lastUpdate = millis();
+  //  Serial.print("Time ");
+  // Serial.println((unsigned long)(millis() - lastUpdate));
   
-  if(leftSpeed != 0 && rightSpeed != 0)
+  if(leftSpeed > 0 && rightSpeed > 0)
   {
-    changeSpeed(leftSpeed, rightSpeed);
+    
     leftSpeed -= leftSpeed >> 4;
     rightSpeed -= rightSpeed >> 4;
   }
@@ -200,19 +206,21 @@ void updateTracks()
     changeSpeed(0, 0);
     }
   }
+
 }
 
 void setTrackDirection(int angle, int distance)
 {
-    int speed = mapf(distance, 0, 40, 5, 12);
+  /*
+    lastUpdate = millis();
+    int speed = mapf(distance, 0, 40, 20, 50);
 
     float rads = (angle * PI)/180;
     float cosA = cos(rads);
     float sinA = sin(rads);
     float absCos = abs(cosA);
-    //int adj = mapf(distance, 0, 40, 1, 10);
 
-    if(absCos > 0.5)
+    if(absCos > 0.4)
     {
       if(cosA > 0)
         leftSpeed += speed;
@@ -224,13 +232,16 @@ void setTrackDirection(int angle, int distance)
       leftSpeed += speed;
       rightSpeed += speed;
     }
-
+    
     if(sinA > 0)
       updateState(1);
     else
       updateState(2);
-    leftSpeed = constrain(leftSpeed, 50, 100);
-    rightSpeed = constrain(rightSpeed, 50, 100);
+    leftSpeed = constrain(leftSpeed, 100, 255);
+    rightSpeed = constrain(rightSpeed, 100, 255);
+
+    */
+    changeSpeed(leftSpeed, rightSpeed);
 }
 
 int BattVoltage() {

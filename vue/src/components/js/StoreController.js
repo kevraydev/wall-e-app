@@ -5,8 +5,8 @@ import { computed } from 'vue'
 const appStore = useSettingStore()
 
 export const app = {
-    connect: computed(() => appStore.getConnection === 'true' || false),
-    video: computed(() => appStore.getVideoStatus === 'true' || false),
+    connect: computed(() => appStore.getConnection),
+    video: computed(() => appStore.getVideoStatus),
     ip: computed(() => appStore.getSettingById(1)),
     joysticks: computed(() => appStore.getAllJoysticks),
     lastJoystickId: computed(() => appStore.getLastJoystick),

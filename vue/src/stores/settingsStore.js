@@ -1,16 +1,22 @@
+// @ts-check
 import { defineStore } from 'pinia'
 import { LocalStorage } from 'quasar'
 
+
+
 export const useSettingStore = defineStore('appSettings', {
   state: () => ({
+      /** @type Settings[] */
       settings: LocalStorage.getItem('settings') ||
       [{id: 1, ipaddress: '192.168.0.1', port: '5000'}],
+      /** @type Joystick[] */
       joysticks: LocalStorage.getItem('joysticks') || 
       [{id: 1, ctrlId: 1, restLock: false}],
+      /** @type Servo[] */
       servos: LocalStorage.getItem('servos') || 
       [{id: 1, label: ''}],
-      connected: LocalStorage.getItem('connectStatus') || ['false'],
-      video: LocalStorage.getItem('video') || ['false'],
+      connected: LocalStorage.getItem('connectStatus') === "true",
+      video: LocalStorage.getItem('video') === "true",
   }),
   getters: {
     getConnection: (state) => {

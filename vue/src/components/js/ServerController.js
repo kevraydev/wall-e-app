@@ -1,7 +1,15 @@
+// @ts-check
 import { api } from 'boot/axios'
 import { ref } from 'vue'
 import { showNote } from './NotifyController'
 
+/**
+ * @param {string} url
+ * @param {string} port
+ * @param {Servo} servo
+ * @param {number} angle
+ * @param {number} distance
+ */
 export function controlServo(url, port, servo, angle, distance){
     const status = ref(false) 
     console.log(url, port, servo, angle, distance)
@@ -19,6 +27,10 @@ export function controlServo(url, port, servo, angle, distance){
   return status.value
 }
 
+/**
+ * @param {string} url
+ * @param {string} port 
+ */
 export async function tryConnect(url, port){
 
   showNote('Connecting..', 'blue-grey-10', true, true, 2500)
@@ -30,11 +42,11 @@ export async function tryConnect(url, port){
   try{
     await api.get(`http://${url}:${port}/check`)
     showNote('Connected', 'positive', false, true)
-    return 'true'
+    return true
   }
   catch(error){
     showNote('Disconnected', 'negative', false, true)
-    return 'false'
+    return false
   }
   
 }
