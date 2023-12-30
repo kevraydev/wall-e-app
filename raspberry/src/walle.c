@@ -27,7 +27,7 @@ void closeSerial()
     serialClose(serial_port);
 }
 
-
+/*
 void queueMovement(int a, int c)
 {
   if(queueNotEmpty(li))
@@ -50,3 +50,4 @@ void updateMovement()
     }
   }
 }
+*/

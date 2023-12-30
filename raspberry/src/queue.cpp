@@ -26,7 +26,7 @@ void cQueue::enqueue(Queue* queue, int key, int value)
         queue->front = queue->rear = item;
 }
 
-int cQueue::getByKey(Queue* queue, int key)
+int cQueue::dequeue(Queue* queue, int key)
 {
     Item* temp = queue->front;
     Item* prevItem = NULL;
@@ -81,7 +81,7 @@ int cQueue::getCount(Queue* queue)
     return count;
 }
 
-int cQueue::searchKey(Queue* queue, int key)
+int cQueue::getByKey(Queue* queue, int key)
 {
     Item* temp = queue->front;
     while (temp) 

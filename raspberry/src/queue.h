@@ -20,7 +20,7 @@ Queue* initQueue();
 
 void enqueue(Queue* queue, int key, int value);
 
-int getByKey(Queue* queue, int key);
+int dequeue(Queue* queue, int key);
 
 void dequeueAll(Queue* queue);
 
@@ -28,7 +28,7 @@ int queueNotEmpty(Queue* queue);
 
 int getCount(Queue* queue);
 
-int searchKey(Queue* queue, int key);
+int getByKey(Queue* queue, int key);
 
 int updateKey(Queue* queue, int key, int value);
 
