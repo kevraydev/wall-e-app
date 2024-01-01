@@ -45,12 +45,16 @@ movement = [
     {'id': 6, 'label': 'Right Track'},
     {'id': 7, 'label': 'Right Arm'},
     {'id': 8, 'label': 'Bottom Neck'},
-    {'id': 9, 'label': 'Tracks'}
+    {'id': 9, 'label': 'Tracks'},
+    {'id': 10, 'label': 'Stop Tracks'}
     ]
 
 
+def map_range(v, a, b, c, d):
+       return (v-a) / (b-a) * (d-c) + c
+
 def control_movement(angle, key, distance):
-    lib.sendData(angle, distance, key)
+    lib.updateServo(key, angle)
 
 #def run_impulse(img, box_color):
     #lib.run_impulse.argtypes = [ctypes.POINTER(Image), Color]

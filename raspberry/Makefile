@@ -2,7 +2,7 @@ CC=gcc
 CFLAGS=-I. -fPIC
 DEPS = wiringPi.h
 OBJ = src/walle.o
-LIBS=-lwiringPi
+LIBS=-lwiringPi -lPCA9685
 
 %.o: %.c $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)

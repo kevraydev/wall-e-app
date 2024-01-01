@@ -23,13 +23,14 @@
 SoftwareSerial softSerial(16, 15);
 DFRobotDFPlayerMini mPlayer;
 
-PCA9685 pwmController;
+//PCA9685 pwmController;
 
 Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_RST);
 unsigned long last = 0;
 unsigned long lastUpdate = 0;
 
 //Control ID - Default POS - Current POS - Min POS - Max POS
+/*
 int controls[9][5] = {
   {0, 90, 90, 10, 175},//Head
   {1, 90, 90, 25, 170},//Neck
@@ -41,7 +42,7 @@ int controls[9][5] = {
   {7, 55, 55, 1, 180},//Right Arm
   {8, 130, 130, 20, 170},//Bottom Neck
 };
-
+*/
 uint16_t leftSpeed;
 uint16_t rightSpeed;
 int motorState = 1;
@@ -63,9 +64,9 @@ void setup(void) {
   tft.drawBitmap(6, 20, walle_icon, 31, 30, 0xFFE0);
   
   tft.println("SOLAR CHARGE LEVEL");
-  pwmController.resetDevices(); 
-  pwmController.init(); 
-  pwmController.setPWMFrequency(50);
+  //pwmController.resetDevices(); 
+  //pwmController.init(); 
+  //pwmController.setPWMFrequency(50);
   
   pinMode(ENA, OUTPUT);
   pinMode(IN1, OUTPUT);
@@ -76,9 +77,9 @@ void setup(void) {
   updateState(0);
   delay(100);
   //mPlayer.play(3);
-  delay(1500);
-  initPOS();
-  delay(1500);
+  //delay(1500);
+  //initPOS();
+  //delay(1500);
 }
 
 void loop() {
@@ -92,7 +93,7 @@ void loop() {
     
     if(angle > 0) {
 
-        updateControl(angle, ctrlId);
+        //updateControl(angle, ctrlId);
     }
 
     delay(1);
@@ -114,7 +115,7 @@ void updateControl(int a, int c)
     switch(c)
     {
       case 9:
-              setTrackDirection(a, d);
+              setTrackDirection(a, c);
               break;
       case 10:
               updateState(0);
@@ -123,9 +124,9 @@ void updateControl(int a, int c)
               break;
     }
   }
-  else {
-    setServoAngle(c, a);
-  }
+ // else {
+  //  setServoAngle(c, a);
+ // }
 }
 
 
@@ -133,7 +134,7 @@ float mapf(float x, float in_min, float in_max, float out_min, float out_max)
 {
   return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
-
+/*
 void setServoAngle(int channel, float degree)
 {
   if(degree < controls[channel][3])
@@ -187,14 +188,14 @@ void eyeCalibration()
   setServoAngle(2, controls[2][4]);
 }
 
-
+*/
 void updateTracks()
 {
   if((unsigned long)(millis() - lastUpdate) >= 500) {
   //  Serial.print("Time ");
   // Serial.println((unsigned long)(millis() - lastUpdate));
   
-  if(leftSpeed > 0 && rightSpeed > 0)
+  if(leftSpeed > 0 || rightSpeed > 0)
   {
     
     leftSpeed -= leftSpeed >> 4;
@@ -241,18 +242,20 @@ void setTrackDirection(int angle, int distance)
     rightSpeed = constrain(rightSpeed, 100, 255);
 
     */
-    changeSpeed(leftSpeed, rightSpeed);
+    //changeSpeed(leftSpeed, rightSpeed);
 }
 
 int BattVoltage() {
   int batValue = analogRead(A0);
-  float voltage = batValue * (2.55 / 1023.0);
-  int level = mapf(voltage, 1.25, 2.55, 1, 12);
+  float voltage = batValue * (2.95 / 1023.0);
+  int level = mapf(voltage, 1.30, 2.60, 1, 12);
+  //tft.println(voltage);
   return level;
 }
 
 void displaySolar() {
   int x = BattVoltage();
+  
   int barArr[12] = {104, 96, 88, 80, 72, 64, 56, 48, 40, 32, 24, 16};
   uint16_t color = ST77XX_YELLOW;
   if(x == 1)
