@@ -1,5 +1,22 @@
 #include "robot.h"
 
+int addr = 0x40;
+
+//Default POS - Min POS - Max POS
+int controls[9][3] = {
+  {90, 10, 175},//Head
+  {90, 25, 170},//Neck
+  {95, 50, 95},//Left Eye
+  {95, 65, 95},//Right Eye
+  {180, 1, 180},//Left Track
+  {120, 1, 180},//Left Arm
+  {1, 1, 180},//Right Track
+  {55, 1, 180},//Right Arm
+  {130, 20, 170},//Bottom Neck
+};
+
+
+
 void robot_init()
 {
     wiringPiSetup();
@@ -11,25 +28,20 @@ void robot_init()
     // initPOS();
 
     sleep(2);
-    set_PD();
+
+    for(int i = 0; i < 9; i++)
+    {
+        //servos[i].defPos = controls[i][0];
+        servos[i].pos = controls[i][0];
+        servos[i].min = controls[i][1];
+        servos[i].max = controls[i][2];
+        servos[i].p = 0.000001;
+        servos[i].d = 0.000001;
+    }
+    
+
 }
 
-void set_PD()
-{
-    /*  posX.pos = SERVO_DUTY_CENTER;
-      posX.p = 0.06;
-      posX.d = 0.008;
-      posX.prevError = 0;
-      posX.minPOS = PAN_DUTY_MIN;
-      posX.maxPOS = PAN_DUTY_MAX;
-
-      posY.pos = SERVO_DUTY_CENTER_TILT;
-      posY.p = 0.06;
-      posY.d = 0.008;
-      posY.prevError = 0;
-      posY.minPOS = TILT_DUTY_MIN;
-      posY.maxPOS = TILT_DUTY_MAX;*/
-}
 
 int initHardware(int adpt, int addr, int freq)
 {
@@ -59,11 +71,11 @@ void closeSerial()
 
 void setServoAngle(int channel, float degree)
 {
-    if (degree < controls[channel][3])
-        degree = controls[channel][3];
-    else if (degree > controls[channel][4])
-        degree = controls[channel][4];
-    controls[channel][2] = degree;
+    if (degree < servos[channel].min)
+        degree = servos[channel].min;
+    else if (degree > servos[channel].max)
+        degree = servos[channel].max;
+    //controls[channel][2] = degree;
     uint16_t pulseWidth = degree * (512 - 102) / 180 + 102;
 
     unsigned int onVals[_PCA9685_CHANS] = {0};
@@ -114,42 +126,40 @@ void eyeCalibration()
     setServoAngle(2, controls[2][4]);
 }
 
-void updatePD(PD *newPos, int error)
-{
-    if (newPos->prevError != 0)
-    {
-        newPos->pos += (error * newPos->p + (error - newPos->prevError) * newPos->d);
-
-        if (newPos->pos > newPos->maxPOS)
-            newPos->pos = newPos->maxPOS;
-        else if (newPos->pos < newPos->minPOS)
-            newPos->pos = newPos->minPOS;
-    }
-    newPos->prevError = error;
-}
-
 void updateHead(int pan, int tilt)
 {
-    if (pan != 0)
+  /*  if (pan != 0)
         updatePD(&posX, pan - 160);
     if (tilt != 0)
         updatePD(&posY, 120 - tilt);
-    servo_set(posX.pos, posY.pos);
+    servo_set(posX.pos, posY.pos);*/
 }
 
 Item *newItem(int key, int value)
 {
-    Item *item = malloc(sizeof(Item));
-    item->key = key;
-    item->value = value;
+    Item *item = (Item*)malloc(sizeof(Item));
+    if(item != NULL)
+    {
+        item->key = key;
+        item->value = value;
+        item->prevError = 0;
+        item->next = NULL;
+    }
     return item;
 }
+
 
 Queue *initQueue()
 {
     Queue *queue = malloc(sizeof(Queue));
+    if(queue != NULL)
+    {
+        queue->front = NULL;
+        queue->rear = NULL;
+    }
     return queue;
 }
+
 
 void enqueue(Queue *queue, int key, int value)
 {
@@ -250,44 +260,64 @@ int updateKey(Queue *queue, int key, int value)
     return -1;
 }
 
-void iterateServos(Queue *queue)
+void updateControl(Item *current)
 {
-    Item *temp = queue->front;
-    Item *prevItem = NULL;
-
-    while (temp != NULL)
+    int i = current->key;
+    int error = current->value - servos[i].pos;
+    if (current->prevError != 0)
     {
-        int i = temp->key;
+        servos[i].pos += (error * servos[i].p + (error - current->prevError) * servos[i].d);
 
-        if (controls[i][2] != temp->value)
+        if (servos[i].pos > servos[i].max)
         {
-            prevItem = temp;
-
-            if (controls[i][2] < temp->value)
-            {
-                controls[i][2] += 1;
-                if (controls[i][2] > controls[i][4])
-                    controls[i][2] = controls[i][4];
-            }
-            else
-            {
-                controls[i][2] -= 1;
-                if (controls[i][2] < controls[i][3])
-                    controls[i][2] = controls[i][3];
-            }
-            setServoAngle(i, controls[i][2]);
-
+            servos[i].pos = servos[i].max;
+            //current->value = servos[i].pos;
         }
-        else
+        else if (servos[i].pos < servos[i].min)
         {
-            prevItem->next = temp->next;
-            if (queue->rear == temp)
-                queue->rear = prevItem;
-            free(temp);
+            servos[i].pos = servos[i].min;
+            //current->value = servos[i].pos;
         }
+        //int currentError = current->value - servos[i].pos;
 
-        temp = temp->next;
+        //if (error < 0 && currentError > 0)
+        //    current->value = servos[i].pos;
+        //else if (error > 0 && currentError < 0)
+        //    current->value = servos[i].pos;
+            
     }
+    current->prevError = error;
 
-    
+    setServoAngle(i, servos[i].pos);
 }
+
+void iterateServos(Queue *queue) 
+{
+    Item *current = queue->front;
+    Item *prev = NULL;
+
+    while (current != NULL)
+    {
+        if (servos[current->key].pos != current->value)
+        {
+            updateControl(current);
+            prev = current;
+            current = current->next;
+        } else {
+            if (prev == NULL)
+            {
+                queue->front = current->next;
+                if (queue->front == NULL) queue->rear = NULL;
+            } else {
+                prev->next = current->next;
+                if (current == queue->rear) queue->rear = prev;
+            }
+
+            Item *tmp = current;
+            current = current->next;
+            free(tmp);
+        }
+    }
+}
+
+

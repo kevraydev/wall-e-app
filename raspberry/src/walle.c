@@ -1,18 +1,6 @@
 #include "robot.h"
 
-//int fd;
-//int addr = 0x40;
-//#define QUEUE_POLLING_RATE 1
-//time_t startTime, currentTime;
-
-//int initHardware(int adpt, int addr, int freq) {
-//  int afd = PCA9685_openI2C(adpt, addr);
-//  PCA9685_initPWM(afd, addr, freq);
-//  return afd;
-//}
-
 Queue* q = initQueue();
-//int serial_port;
 
 void setup()
 {
@@ -22,26 +10,38 @@ void setup()
 
 void walle()
 {
-  time(&startTime);
+    clock_gettime(CLOCK_MONOTONIC, &startTime);
 
-      while(true) {
-        time(&currentTime);
-        double elapsed = difftime(currentTime, startTime);
+    while(true)
+    {
+        clock_gettime(CLOCK_MONOTONIC, &currentTime);
 
-        if(elapsed > QUEUE_POLLING_RATE){
+        long elapsed = (currentTime.tv_sec - startTime.tv_sec)*1000 + 
+                       (currentTime.tv_nsec - startTime.tv_nsec)/1000000;
+                       
+        if(elapsed > QUEUE_POLLING_RATE)
+        {
             startTime = currentTime;
-            //int c = getCount(q);
-          if(queueNotEmpty(q))
-          {
-            iterateServos(q);
-          }
-            
-        }
 
+            if(queueNotEmpty(q))
+            {
+                iterateServos(q);
+            }   
+        }
     }
 
-    queue.dequeueAll(li);
-    return 0;
+    dequeueAll(q);
+    return;
+}
+
+
+void update(int id, int value)
+{
+  if(getByKey(q, id) < 0)
+    enqueue(q, id, value);
+  else
+    updateKey(q, id, value)
+  
 }
 
 void updateServo(int id, int angle)

@@ -54,7 +54,7 @@ def map_range(v, a, b, c, d):
        return (v-a) / (b-a) * (d-c) + c
 
 def control_movement(angle, key, distance):
-    lib.updateServo(key, angle)
+    lib.update(key, angle)
 
 #def run_impulse(img, box_color):
     #lib.run_impulse.argtypes = [ctypes.POINTER(Image), Color]
@@ -96,7 +96,8 @@ def gen_frames():
     #lib.walle()
     #else:
     #if time.time() - connect_time > 30:
-
+def walle():
+    lib.walle()
 
 
 @app.route('/video', methods=['GET'])
@@ -130,7 +131,7 @@ def check_connect():
 def get_options():
     return jsonify(movement)
 
-#threading.Thread(target=walle).start()
+threading.Thread(target=walle).start()
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
