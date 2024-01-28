@@ -47,14 +47,14 @@ void robot_init()
     posX.max = controls[0][2];
 
     posY.pos = controls[1][0];
-    posY.p = 0.02;
+    posY.p = 0.005;
     posY.d = 0.008;
     posY.prevError = 0;
     posY.min = controls[1][1];
     posY.max = controls[1][2];
 
     tilt.pos = controls[8][0];
-    tilt.p = 0.02;
+    tilt.p = 0.005;
     tilt.d = 0.008;
     tilt.prevError = 0;
     tilt.min = controls[8][1];
@@ -172,6 +172,7 @@ void updateHead(int x, int y, int area)
         updatePD(&posY, CAM_HEIGHT - y);
         setServoAngle(1, posY.pos);
         int tilt_error = posY.pos - ((posY.min + posY.max) / 2);
+        updatePD(&tilt, tilt_error);
     }
 }
 
@@ -181,220 +182,30 @@ void updateCoords(objectCoord *obj)
     {
         updateHead(obj->x, obj->y, obj->area);
 
-        if (obj->x == CAM_WIDTH && obj->y == CAM_HEIGHT)
+        if (obj->x == CAM_WIDTH/2 && obj->y == CAM_HEIGHT/2)
             obj->area = 0;
         else
         {
-            if (obj->x > CAM_WIDTH)
+            if (obj->x > CAM_WIDTH/2)
                 obj->x -= 1;
-            else if (obj->x < CAM_WIDTH)
+            else if (obj->x < CAM_WIDTH/2)
                 obj->x += 1;
 
-            if (obj->y > CAM_HEIGHT)
+            if (obj->y > CAM_HEIGHT/2)
                 obj->y -= 1;
-            else if (obj->y < CAM_HEIGHT)
+            else if (obj->y < CAM_HEIGHT/2)
                 obj->y += 1;
         }
     }
 }
 
-/*
-Item *newItem(int key, int value)
-{
-    Item *item = (Item*)malloc(sizeof(Item));
-    if(item != NULL)
-    {
-        item->key = key;
-        item->value = value;
-        item->prevError = 0;
-        item->next = NULL;
-    }
-    return item;
+Point convert_angle(int angle) {
+    Point result;
+
+    double radians = (angle * M_PI) / 180.0;
+
+    result.x = mapRange(-CAM_WIDTH,CAM_WIDTH,1,CAM_WIDTH,CAM_WIDTH * cos(radians));
+    result.y = mapRange(-CAM_HEIGHT,CAM_HEIGHT,1,CAM_HEIGHT,CAM_HEIGHT * sin(radians));
+
+    return result;
 }
-
-
-Queue *initQueue()
-{
-    Queue *queue = malloc(sizeof(Queue));
-    if(queue != NULL)
-    {
-        queue->front = NULL;
-        queue->rear = NULL;
-    }
-    return queue;
-}
-
-
-void enqueue(Queue *queue, int key, int value)
-{
-    Item *item = newItem(key, value);
-    if (queue->rear)
-    {
-        queue->rear->next = item;
-        queue->rear = item;
-    }
-    else
-        queue->front = queue->rear = item;
-}
-
-int dequeue(Queue *queue, int key)
-{
-    Item *temp = queue->front;
-    Item *prevItem = NULL;
-
-    if (temp == NULL)
-        return 0;
-
-    while (temp != NULL && temp->key != key)
-    {
-        prevItem = temp;
-        temp = temp->next;
-    }
-
-    prevItem->next = temp->next;
-
-    if (queue->rear == temp)
-        queue->rear = prevItem;
-
-    free(temp);
-    return 0;
-}
-
-void dequeueAll(Queue *queue)
-{
-    while (queue->front)
-    {
-        Item *item = queue->front;
-        queue->front = queue->front->next;
-        free(item);
-    }
-    queue->rear = NULL;
-}
-
-int queueNotEmpty(Queue *queue)
-{
-    if (queue->front)
-        return 1;
-    else
-        return 0;
-}
-
-int getCount(Queue *queue)
-{
-    int count = 0;
-    Item *temp = queue->front;
-    while (temp)
-    {
-        count += 1;
-        temp = temp->next;
-    }
-    return count;
-}
-
-int getByKey(Queue *queue, int key)
-{
-    Item *temp = queue->front;
-    while (temp)
-    {
-        if (temp->key == key)
-        {
-            return temp->value;
-        }
-        temp = temp->next;
-    }
-    return -1;
-}
-
-int updateKey(Queue *queue, int key, int value)
-{
-    Item *temp = queue->front;
-
-    if (temp == NULL)
-        return -1;
-
-    while (temp != NULL)
-    {
-        if (temp->key == key)
-        {
-            temp->value = value;
-            temp->prevError = 0;
-            return 0;
-        }
-        temp = temp->next;
-    }
-    return -1;
-}
-
-void updateControl(Item *current)
-{
-    int i = current->key;
-    int error = 0;
-   // if(current->value > servos[i].pos)
-        //error = current->value - servos[i].pos;
-    if(current->value > servos[i].pos)
-        error = (current->value+10) - servos[i].pos;
-    else
-        error = current->value - servos[i].pos;
-   // else if(current->value < servos[i].pos)
-   // {
-   //     error = servos[i].pos - current->value;
-   //     error *= -1;
-   // }
-
-    if (current->prevError != 0)
-    {
-        servos[i].pos += (error * servos[i].p + (error - current->prevError) * servos[i].d);
-
-        if (servos[i].pos > servos[i].max)
-        {
-            servos[i].pos = servos[i].max;
-            //current->value = servos[i].pos;
-        }
-        else if (servos[i].pos < servos[i].min)
-        {
-            servos[i].pos = servos[i].min;
-            //current->value = servos[i].pos;
-        }
-        //int currentError = current->value - servos[i].pos;
-
-        //if (error < 0 && currentError > 0)
-        //    current->value = servos[i].pos;
-        //else if (error > 0 && currentError < 0)
-        //    current->value = servos[i].pos;
-
-    }
-
-    current->prevError = error;
-
-    setServoAngle(i, servos[i].pos);
-}
-
-void iterateServos(Queue *queue)
-{
-    Item *current = queue->front;
-    Item *prev = NULL;
-
-    while (current != NULL)
-    {
-        if (servos[current->key].pos != current->value)
-        {
-            updateControl(current);
-            prev = current;
-            current = current->next;
-        } else {
-            if (prev == NULL)
-            {
-                queue->front = current->next;
-                if (queue->front == NULL) queue->rear = NULL;
-            } else {
-                prev->next = current->next;
-                if (current == queue->rear) queue->rear = prev;
-            }
-
-            Item *tmp = current;
-            current = current->next;
-            free(tmp);
-        }
-    }
-}
-*/

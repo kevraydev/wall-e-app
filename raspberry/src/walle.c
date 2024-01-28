@@ -40,17 +40,14 @@ void walle()
 }
 
 
-void update(int x, int y, int area)
+void update(int angle)
 {
-  
-//  if(getByKey(q, id) < 0)
-//    enqueue(q, id, value);
-//  else
-//   updateKey(q, id, value)
-  //updateCoords(x, y, area);
-  obj.x = x;
-  obj.y = y;
-  obj.area = area;
+
+  Point coord;
+  coord = convert_angle(angle);
+  obj.x = coord.x;
+  obj.y = coord.y;
+  obj.area = 1;
   if(state != 0)
     state = 0;
 }

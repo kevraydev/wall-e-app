@@ -54,6 +54,8 @@ def map_range(v, a, b, c, d):
        return (v-a) / (b-a) * (d-c) + c
 
 def control_movement(angle, key, distance):
+    if distance == 0:
+        lib.updateServo(key, angle)
     lib.update(key, angle)
 
 #def run_impulse(img, box_color):
