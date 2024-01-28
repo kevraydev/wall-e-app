@@ -11,17 +11,20 @@
 
 int fd;
 extern int addr;
-#define QUEUE_POLLING_RATE 50
+#define POLLING_RATE 50
+#define CAM_WIDTH 640 / 2
+#define CAM_HEIGHT 480 / 2
+//#define MEDIAN(value1, value2)
 struct timespec startTime, currentTime;
 int serial_port;
 
 
 extern int controls[9][3];
-
+/*
 typedef struct Item {
     int key;
     int value;
-    int prevError;
+    //int prevError;
     struct Item* next;
 } Item;
 
@@ -29,11 +32,17 @@ typedef struct Queue {
     Item* front;
     Item* rear;
 } Queue;
-
+*/
 //typedef struct PD PD;
+
+typedef struct objectCoord {
+    int area;
+    int x;
+    int y;
+} objectCoord;
+
 typedef struct Servo {
-    //int id;
-    //int defPos;
+    int prevError;
     int pos;
     int min;
     int max;
@@ -41,7 +50,14 @@ typedef struct Servo {
 	float d;
 } Servo;
 
-struct Servo servos[9];
+struct Servo servos[6];
+
+objectCoord obj;
+
+Servo posX;
+Servo posY;
+Servo tilt;
+
 
 void robot_init();
 
@@ -61,26 +77,27 @@ int initHardware(int adpt, int addr, int freq);
 
 void updateHead(int pan, int tilt);
 
-Item* newItem(int key, int value);
+void updateCoords(objectCoord* obj);
+//Item* newItem(int key, int value);
 
-Queue* initQueue();
+//Queue* initQueue();
 
-void enqueue(Queue* queue, int key, int value);//enqueue new item with key and value
+//void enqueue(Queue* queue, int key, int value);//enqueue new item with key and value
 
-int dequeue(Queue* queue, int key);//dequeue by key
+//int dequeue(Queue* queue, int key);//dequeue by key
 
-void dequeueAll(Queue* queue);//dequeue all
+//void dequeueAll(Queue* queue);//dequeue all
 
-int queueNotEmpty(Queue* queue);//returns 0 if queue empty or 1 if not empty
+//int queueNotEmpty(Queue* queue);//returns 0 if queue empty or 1 if not empty
 
-int getCount(Queue* queue);//return number of items in queue
+//int getCount(Queue* queue);//return number of items in queue
 
-int getByKey(Queue* queue, int key);//return value stored at queue by it's key
+//int getByKey(Queue* queue, int key);//return value stored at queue by it's key
 
-int updateKey(Queue* queue, int key, int value);//update value stored at queue by it's key
+//int updateKey(Queue* queue, int key, int value);//update value stored at queue by it's key
 
-void updateControl(Item *current);
+//void updateControl(Item *current);
 
-void iterateServos(Queue *queue);
+//void iterateServos(Queue *queue);
 
 #endif

@@ -2,20 +2,22 @@
 
 int addr = 0x40;
 
-//Default POS - Min POS - Max POS
+// Default POS - Min POS - Max POS
 int controls[9][3] = {
-  {90, 10, 175},//Head
-  {90, 25, 170},//Neck
-  {95, 50, 95},//Left Eye
-  {95, 65, 95},//Right Eye
-  {180, 1, 180},//Left Track
-  {120, 1, 180},//Left Arm
-  {1, 1, 180},//Right Track
-  {55, 1, 180},//Right Arm
-  {130, 20, 170},//Bottom Neck
+    {100, 25, 175}, // Head
+    {90, 25, 170},  // Neck
+    {95, 50, 95},   // Left Eye
+    {95, 65, 95},   // Right Eye
+    {180, 1, 180},  // Left Track
+    {120, 1, 180},  // Left Arm
+    {1, 1, 180},    // Right Track
+    {55, 1, 180},   // Right Arm
+    {130, 20, 170}, // Bottom Neck
 };
 
-
+// Servo posX;
+// Servo posY;
+// Servo tilt;
 
 void robot_init()
 {
@@ -25,23 +27,41 @@ void robot_init()
 
     fd = initHardware(1, addr, 50);
 
-    // initPOS();
-
     sleep(2);
 
-    for(int i = 0; i < 9; i++)
-    {
-        //servos[i].defPos = controls[i][0];
-        servos[i].pos = controls[i][0];
-        servos[i].min = controls[i][1];
-        servos[i].max = controls[i][2];
-        servos[i].p = 0.000001;
-        servos[i].d = 0.000001;
-    }
-    
+    /*  for(int i = 0; i < 9; i++)
+      {
+          //servos[i].defPos = controls[i][0];
+          servos[i].pos = controls[i][0];
+          servos[i].min = controls[i][1];
+          servos[i].max = controls[i][2];
+          servos[i].p = 0.0000001;
+          servos[i].d = 0.0000001;
+      }
+  */
+    posX.pos = controls[0][0];
+    posX.p = 0.02;
+    posX.d = 0.008;
+    posX.prevError = 0;
+    posX.min = controls[0][1];
+    posX.max = controls[0][2];
 
+    posY.pos = controls[1][0];
+    posY.p = 0.02;
+    posY.d = 0.008;
+    posY.prevError = 0;
+    posY.min = controls[1][1];
+    posY.max = controls[1][2];
+
+    tilt.pos = controls[8][0];
+    tilt.p = 0.02;
+    tilt.d = 0.008;
+    tilt.prevError = 0;
+    tilt.min = controls[8][1];
+    tilt.max = controls[8][2];
+
+    // initPOS();
 }
-
 
 int initHardware(int adpt, int addr, int freq)
 {
@@ -71,11 +91,11 @@ void closeSerial()
 
 void setServoAngle(int channel, float degree)
 {
-    if (degree < servos[channel].min)
-        degree = servos[channel].min;
-    else if (degree > servos[channel].max)
-        degree = servos[channel].max;
-    //controls[channel][2] = degree;
+    if (degree < controls[channel].min)
+        degree = controls[channel].min;
+    else if (degree > controls[channel].max)
+        degree = controls[channel].max;
+    // controls[channel][2] = degree;
     uint16_t pulseWidth = degree * (512 - 102) / 180 + 102;
 
     unsigned int onVals[_PCA9685_CHANS] = {0};
@@ -90,51 +110,95 @@ void initPOS()
 {
     for (int i = 0; i <= 8; i++)
     {
-        setServoAngle(controls[i][0], controls[i][1]);
+        setServoAngle(i, controls[i][0]);
         delay(250);
     }
     delay(250);
-    eyeCalibration();
+    // eyeCalibration();
 }
 
 void eyeCalibration()
 {
     int delayAmt = 500;
-    if (controls[3][2] != controls[3][4])
-        setServoAngle(3, controls[3][4]);
-    if (controls[2][2] != controls[2][4])
-        setServoAngle(2, controls[2][4]);
+    if (servos[3].pos != controls[3][2])
+        setServoAngle(3, controls[3][2]);
+    if (servos[2].pos != controls[2][2])
+        setServoAngle(2, controls[2][2]);
 
-    if (controls[0][2] != 90)
+    if (servos[0].pos != 90)
     {
         setServoAngle(0, 90);
         delay(1000);
     }
 
-    setServoAngle(2, controls[2][3]); // Left down
+    setServoAngle(2, controls[2][1]); // Left down
     delay(delayAmt);
-    setServoAngle(3, controls[3][3]); // Right down
+    setServoAngle(3, controls[3][1]); // Right down
     delay(delayAmt);
-    setServoAngle(2, controls[2][4]); // Left up
+    setServoAngle(2, controls[2][2]); // Left up
     delay(delayAmt);
-    setServoAngle(3, controls[3][4]); // Down up
+    setServoAngle(3, controls[3][2]); // Down up
     delay(delayAmt);
-    setServoAngle(3, controls[3][3]); // Left and Right Down
-    setServoAngle(2, controls[2][3]);
+    setServoAngle(3, controls[3][1]); // Left and Right Down
+    setServoAngle(2, controls[2][1]);
     delay(delayAmt + 200);
-    setServoAngle(3, controls[3][4]); // Left and Right Up
-    setServoAngle(2, controls[2][4]);
+    setServoAngle(3, controls[3][2]); // Left and Right Up
+    setServoAngle(2, controls[2][2]);
 }
 
-void updateHead(int pan, int tilt)
+void updatePD(Servo *newPos, int error)
 {
-  /*  if (pan != 0)
-        updatePD(&posX, pan - 160);
-    if (tilt != 0)
-        updatePD(&posY, 120 - tilt);
-    servo_set(posX.pos, posY.pos);*/
+    if (newPos->prevError != 0)
+    {
+        newPos->pos += (error * newPos->p + (error - newPos->prevError) * newPos->d);
+
+        if (newPos->pos > newPos->max)
+            newPos->pos = newPos->max;
+        else if (newPos->pos < newPos->min)
+            newPos->pos = newPos->min;
+    }
+    newPos->prevError = error;
 }
 
+void updateHead(int x, int y, int area)
+{
+    if (x != 0)
+    {
+        updatePD(&posX, x - CAM_WIDTH);
+        setServoAngle(0, posX.pos);
+    }
+    if (y != 0)
+    {
+        updatePD(&posY, CAM_HEIGHT - y);
+        setServoAngle(1, posY.pos);
+        int tilt_error = posY.pos - ((posY.min + posY.max) / 2);
+    }
+}
+
+void updateCoords(objectCoord *obj)
+{
+    if (obj->area != 0)
+    {
+        updateHead(obj->x, obj->y, obj->area);
+
+        if (obj->x == CAM_WIDTH && obj->y == CAM_HEIGHT)
+            obj->area = 0;
+        else
+        {
+            if (obj->x > CAM_WIDTH)
+                obj->x -= 1;
+            else if (obj->x < CAM_WIDTH)
+                obj->x += 1;
+
+            if (obj->y > CAM_HEIGHT)
+                obj->y -= 1;
+            else if (obj->y < CAM_HEIGHT)
+                obj->y += 1;
+        }
+    }
+}
+
+/*
 Item *newItem(int key, int value)
 {
     Item *item = (Item*)malloc(sizeof(Item));
@@ -253,6 +317,7 @@ int updateKey(Queue *queue, int key, int value)
         if (temp->key == key)
         {
             temp->value = value;
+            temp->prevError = 0;
             return 0;
         }
         temp = temp->next;
@@ -263,7 +328,19 @@ int updateKey(Queue *queue, int key, int value)
 void updateControl(Item *current)
 {
     int i = current->key;
-    int error = current->value - servos[i].pos;
+    int error = 0;
+   // if(current->value > servos[i].pos)
+        //error = current->value - servos[i].pos;
+    if(current->value > servos[i].pos)
+        error = (current->value+10) - servos[i].pos;
+    else
+        error = current->value - servos[i].pos;
+   // else if(current->value < servos[i].pos)
+   // {
+   //     error = servos[i].pos - current->value;
+   //     error *= -1;
+   // }
+
     if (current->prevError != 0)
     {
         servos[i].pos += (error * servos[i].p + (error - current->prevError) * servos[i].d);
@@ -284,14 +361,15 @@ void updateControl(Item *current)
         //    current->value = servos[i].pos;
         //else if (error > 0 && currentError < 0)
         //    current->value = servos[i].pos;
-            
+
     }
+
     current->prevError = error;
 
     setServoAngle(i, servos[i].pos);
 }
 
-void iterateServos(Queue *queue) 
+void iterateServos(Queue *queue)
 {
     Item *current = queue->front;
     Item *prev = NULL;
@@ -319,5 +397,4 @@ void iterateServos(Queue *queue)
         }
     }
 }
-
-
+*/
