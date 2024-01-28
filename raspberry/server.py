@@ -56,7 +56,7 @@ def map_range(v, a, b, c, d):
 def control_movement(angle, key, distance):
     if distance == 0:
         lib.updateServo(key, angle)
-    lib.update(key, angle)
+    lib.update(angle)
 
 #def run_impulse(img, box_color):
     #lib.run_impulse.argtypes = [ctypes.POINTER(Image), Color]

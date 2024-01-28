@@ -202,7 +202,7 @@ void updateCoords(objectCoord *obj)
 Point convert_angle(int angle) {
     Point result;
 
-    double radians = (angle * M_PI) / 180.0;
+    double radians = (angle * 3.14159) / 180.0;
 
     result.x = mapRange(-CAM_WIDTH,CAM_WIDTH,1,CAM_WIDTH,CAM_WIDTH * cos(radians));
     result.y = mapRange(-CAM_HEIGHT,CAM_HEIGHT,1,CAM_HEIGHT,CAM_HEIGHT * sin(radians));
