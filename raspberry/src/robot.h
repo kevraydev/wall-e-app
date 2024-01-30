@@ -11,14 +11,19 @@
 
 int fd;
 extern int addr;
-#define POLLING_RATE 150
+#define POLLING_RATE 1
 #define CAM_WIDTH 480
 #define CAM_HEIGHT 640
 #define mapRange(a1,a2,b1,b2,s) (b1 + (s-a1)*(b2-b1)/(a2-a1))
+#define constrain(amt,low,high) ((amt)<(low)?(low):((amt)>(high)?(high):(amt)))
+#define MIN(a,b) ((a) < (b)  ? (a) : (b) )
+#define MAX(a,b) ((a) > (b)  ? (a) : (b) )
 
 struct timespec startTime, currentTime;
 int serial_port;
 
+extern unsigned int setServo[_PCA9685_CHANS];
+extern unsigned int offVals[_PCA9685_CHANS];
 
 extern int controls[9][3];
 
@@ -61,7 +66,9 @@ void sendData(int angle, int distance, int ctrlId);
 
 void closeSerial();
 
-void setServoAngle(int channel, float degree);
+uint16_t pulseWidth(int channel, float degree);
+
+void setServoAngle();
 
 void initPOS();
 
@@ -69,7 +76,7 @@ void eyeCalibration();
 
 int initHardware(int adpt, int addr, int freq);
 
-void updateHead(int pan, int tilt);
+void updateHead(int x, int y, int area);
 
 void updateCoords(objectCoord* obj);
 

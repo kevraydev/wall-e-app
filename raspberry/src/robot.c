@@ -1,11 +1,13 @@
 #include "robot.h"
 
 int addr = 0x40;
+unsigned int setServo[_PCA9685_CHANS] = {0};
+unsigned int offVals[_PCA9685_CHANS] = {0};
 
 // Default POS - Min POS - Max POS
 int controls[9][3] = {
     {100, 25, 175}, // Head
-    {90, 25, 170},  // Neck
+    {90, 25, 120},  // Neck
     {95, 50, 95},   // Left Eye
     {95, 65, 95},   // Right Eye
     {180, 1, 180},  // Left Track
@@ -14,10 +16,6 @@ int controls[9][3] = {
     {55, 1, 180},   // Right Arm
     {130, 20, 170}, // Bottom Neck
 };
-
-// Servo posX;
-// Servo posY;
-// Servo tilt;
 
 void robot_init()
 {
@@ -40,21 +38,21 @@ void robot_init()
       }
   */
     posX.pos = controls[0][0];
-    posX.p = 0.02;
+    posX.p = 0.004;
     posX.d = 0.008;
     posX.prevError = 0;
     posX.min = controls[0][1];
     posX.max = controls[0][2];
 
     posY.pos = controls[1][0];
-    posY.p = 0.005;
+    posY.p = 0.004;
     posY.d = 0.008;
     posY.prevError = 0;
     posY.min = controls[1][1];
     posY.max = controls[1][2];
 
     tilt.pos = controls[8][0];
-    tilt.p = 0.005;
+    tilt.p = 0.004;
     tilt.d = 0.008;
     tilt.prevError = 0;
     tilt.min = controls[8][1];
@@ -89,28 +87,33 @@ void closeSerial()
     serialClose(serial_port);
 }
 
-void setServoAngle(int channel, float degree)
+uint16_t pulseWidth(int channel, float degree)
 {
-    if (degree < controls[channel].min)
-        degree = controls[channel].min;
-    else if (degree > controls[channel].max)
-        degree = controls[channel].max;
+    if (degree < controls[channel][1])
+        degree = controls[channel][1];
+    else if (degree > controls[channel][2])
+        degree = controls[channel][2];
     // controls[channel][2] = degree;
-    uint16_t pulseWidth = degree * (512 - 102) / 180 + 102;
+    return round(degree * (512 - 102) / 180 + 102);
+}
+void setServoAngle()
+{
+    
 
-    unsigned int onVals[_PCA9685_CHANS] = {0};
-    unsigned int offVals[_PCA9685_CHANS] = {0};
+    //unsigned int onVals[_PCA9685_CHANS] = {0};
+    //unsigned int offVals[_PCA9685_CHANS] = {0};
 
-    offVals[channel] = round(pulseWidth);
+    //onVals[channel] = round(pulseWidth);
 
-    PCA9685_setPWMVals(fd, addr, onVals, offVals);
+    PCA9685_setPWMVals(fd, addr, offVals, setServo);
+    setServo[_PCA9685_CHANS] = 0;
 }
 
 void initPOS()
 {
     for (int i = 0; i <= 8; i++)
     {
-        setServoAngle(i, controls[i][0]);
+        //setServoAngle(i, controls[i][0]);
         delay(250);
     }
     delay(250);
@@ -121,29 +124,29 @@ void eyeCalibration()
 {
     int delayAmt = 500;
     if (servos[3].pos != controls[3][2])
-        setServoAngle(3, controls[3][2]);
+        //setServoAngle(3, controls[3][2]);
     if (servos[2].pos != controls[2][2])
-        setServoAngle(2, controls[2][2]);
+        //setServoAngle(2, controls[2][2]);
 
     if (servos[0].pos != 90)
     {
-        setServoAngle(0, 90);
+        //setServoAngle(0, 90);
         delay(1000);
     }
 
-    setServoAngle(2, controls[2][1]); // Left down
+    //setServoAngle(2, controls[2][1]); // Left down
     delay(delayAmt);
-    setServoAngle(3, controls[3][1]); // Right down
+    //setServoAngle(3, controls[3][1]); // Right down
     delay(delayAmt);
-    setServoAngle(2, controls[2][2]); // Left up
+    //setServoAngle(2, controls[2][2]); // Left up
     delay(delayAmt);
-    setServoAngle(3, controls[3][2]); // Down up
+    //setServoAngle(3, controls[3][2]); // Down up
     delay(delayAmt);
-    setServoAngle(3, controls[3][1]); // Left and Right Down
-    setServoAngle(2, controls[2][1]);
+    //setServoAngle(3, controls[3][1]); // Left and Right Down
+    //setServoAngle(2, controls[2][1]);
     delay(delayAmt + 200);
-    setServoAngle(3, controls[3][2]); // Left and Right Up
-    setServoAngle(2, controls[2][2]);
+    //setServoAngle(3, controls[3][2]); // Left and Right Up
+    //setServoAngle(2, controls[2][2]);
 }
 
 void updatePD(Servo *newPos, int error)
@@ -164,16 +167,31 @@ void updateHead(int x, int y, int area)
 {
     if (x != 0)
     {
-        updatePD(&posX, x - CAM_WIDTH);
-        setServoAngle(0, posX.pos);
+        
+        updatePD(&posX, x - CAM_WIDTH/2);
+        if((posY.pos > 100 && tilt.pos > 140) || (posY.pos >= 120 && tilt.pos > 90))
+        {
+            if(posX.pos > controls[0][0])
+                setServo[0] = pulseWidth(0, MIN(posX.pos, 130));
+            if(posX.pos < controls[0][0])
+                setServo[0] = pulseWidth(0, MAX(posX.pos, 70));
+
+        }
+
+        setServo[0] = pulseWidth(0, posX.pos);
+        //setServoAngle();
     }
     if (y != 0)
     {
-        updatePD(&posY, CAM_HEIGHT - y);
-        setServoAngle(1, posY.pos);
-        int tilt_error = posY.pos - ((posY.min + posY.max) / 2);
-        updatePD(&tilt, tilt_error);
+        updatePD(&posY, y - CAM_HEIGHT/2);
+        setServo[1] = pulseWidth(1, posY.pos);
+        //setServoAngle(1, posY.pos);
+        //int tilt_error = ((posY.min + posY.max) / 2) - posY.pos;
+        //updatePD(&tilt, tilt_error);
+        //setServo[8] = pulseWidth(8, tilt.pos);
     }
+    
+    setServoAngle();
 }
 
 void updateCoords(objectCoord *obj)
@@ -187,16 +205,18 @@ void updateCoords(objectCoord *obj)
         else
         {
             if (obj->x > CAM_WIDTH/2)
-                obj->x -= 1;
+                obj->x = constrain(obj->x -= 10, CAM_WIDTH/2, CAM_WIDTH);//-= 1;
             else if (obj->x < CAM_WIDTH/2)
-                obj->x += 1;
+                obj->x = constrain(obj->x += 10, 0, CAM_WIDTH/2);
 
             if (obj->y > CAM_HEIGHT/2)
-                obj->y -= 1;
+                obj->y = constrain(obj->y -= 10, CAM_HEIGHT/2, CAM_HEIGHT);
             else if (obj->y < CAM_HEIGHT/2)
-                obj->y += 1;
+                obj->y = constrain(obj->y += 10, 0, CAM_HEIGHT/2);
         }
     }
+    else
+        setServo[_PCA9685_CHANS] = 0;
 }
 
 Point convert_angle(int angle) {

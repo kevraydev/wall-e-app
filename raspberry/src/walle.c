@@ -54,5 +54,6 @@ void update(int angle)
 
 void updateServo(int id, int angle)
 {
-  setServoAngle(id, angle);
+  setServo[id] = pulseWidth(id, angle);
+  setServoAngle();
 }

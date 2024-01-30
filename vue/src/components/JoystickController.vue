@@ -38,7 +38,7 @@ import { app, getJoySticks, getVideo } from './js/StoreController'
              // if(!status.value) {
               //  tryConnect()
              // }
-            }, 15)
+            }, 5)
           }
       }
 
