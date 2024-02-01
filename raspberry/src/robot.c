@@ -14,7 +14,7 @@ int controls[9][3] = {
     {120, 1, 180},  // Left Arm
     {1, 1, 180},    // Right Track
     {55, 1, 180},   // Right Arm
-    {130, 20, 170}, // Bottom Neck
+    {130, 30, 170}, // Bottom Neck
 };
 
 void robot_init()
@@ -38,8 +38,8 @@ void robot_init()
       }
   */
     posX.pos = controls[0][0];
-    posX.p = 0.004;
-    posX.d = 0.008;
+    posX.p = 0.0065;
+    posX.d = 0.032;
     posX.prevError = 0;
     posX.min = controls[0][1];
     posX.max = controls[0][2];
@@ -52,7 +52,7 @@ void robot_init()
     posY.max = controls[1][2];
 
     tilt.pos = controls[8][0];
-    tilt.p = 0.004;
+    tilt.p = 0.006;
     tilt.d = 0.008;
     tilt.prevError = 0;
     tilt.min = controls[8][1];
@@ -167,18 +167,15 @@ void updateHead(int x, int y, int area)
 {
     if (x != 0)
     {
-        
         updatePD(&posX, x - CAM_WIDTH/2);
-        if((posY.pos > 100 && tilt.pos > 140) || (posY.pos >= 120 && tilt.pos > 90))
-        {
-            if(posX.pos > controls[0][0])
-                setServo[0] = pulseWidth(0, MIN(posX.pos, 130));
-            if(posX.pos < controls[0][0])
-                setServo[0] = pulseWidth(0, MAX(posX.pos, 70));
-
-        }
-
         setServo[0] = pulseWidth(0, posX.pos);
+        if(posY.pos > 100 && tilt.pos > 90)
+        {
+            if(posX.pos >= 130)
+                setServo[0] = pulseWidth(0, 130);
+            if(posX.pos <= 70)
+                setServo[0] = pulseWidth(0, 70);
+        }
         //setServoAngle();
     }
     if (y != 0)
@@ -186,9 +183,9 @@ void updateHead(int x, int y, int area)
         updatePD(&posY, y - CAM_HEIGHT/2);
         setServo[1] = pulseWidth(1, posY.pos);
         //setServoAngle(1, posY.pos);
-        //int tilt_error = ((posY.min + posY.max) / 2) - posY.pos;
-        //updatePD(&tilt, tilt_error);
-        //setServo[8] = pulseWidth(8, tilt.pos);
+        int tilt_error = posY.pos - ((posY.min + posY.max) / 2);
+        updatePD(&tilt, tilt_error);
+        setServo[8] = pulseWidth(8, tilt.pos);
     }
     
     setServoAngle();
@@ -207,7 +204,7 @@ void updateCoords(objectCoord *obj)
             if (obj->x > CAM_WIDTH/2)
                 obj->x = constrain(obj->x -= 10, CAM_WIDTH/2, CAM_WIDTH);//-= 1;
             else if (obj->x < CAM_WIDTH/2)
-                obj->x = constrain(obj->x += 10, 0, CAM_WIDTH/2);
+                obj->x = constrain(obj->x += 15, 0, CAM_WIDTH/2);
 
             if (obj->y > CAM_HEIGHT/2)
                 obj->y = constrain(obj->y -= 10, CAM_HEIGHT/2, CAM_HEIGHT);
