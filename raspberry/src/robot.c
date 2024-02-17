@@ -178,6 +178,7 @@ void updateHead(int x, int y, int area)
         }
         //setServoAngle();
     }
+    
     if (y != 0)
     {
         updatePD(&posY, y - CAM_HEIGHT/2);
