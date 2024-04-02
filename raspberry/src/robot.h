@@ -11,9 +11,12 @@
 
 int fd;
 extern int addr;
-#define POLLING_RATE 1
+#define POLLING_RATE 5
 #define CAM_WIDTH 480
 #define CAM_HEIGHT 640
+#define CAM_WIDTH_F 240
+#define CAM_HEIGHT_F 320
+#define LOW_SPEED 60
 #define mapRange(a1,a2,b1,b2,s) (b1 + (s-a1)*(b2-b1)/(a2-a1))
 #define constrain(amt,low,high) ((amt)<(low)?(low):((amt)>(high)?(high):(amt)))
 #define MIN(a,b) ((a) < (b)  ? (a) : (b) )
@@ -34,8 +37,14 @@ typedef struct {
     double y;
 } Point;
 
+typedef struct {
+    int left;
+    int right;
+    int state;
+} Speed;
+
 typedef struct objectCoord {
-    int area;
+    int state;
     int x;
     int y;
 } objectCoord;
@@ -52,6 +61,7 @@ typedef struct Servo {
 struct Servo servos[6];
 
 objectCoord obj;
+Speed track;
 
 Servo posX;
 Servo posY;
@@ -62,7 +72,7 @@ void robot_init();
 
 void delay(int mili);
 
-void sendData(int angle, int distance, int ctrlId);
+void sendData(int value1, int value2);
 
 void closeSerial();
 
@@ -76,9 +86,17 @@ void eyeCalibration();
 
 int initHardware(int adpt, int addr, int freq);
 
-void updateHead(int x, int y, int area);
+void updateHead(int x, int y);
 
 void updateCoords(objectCoord* obj);
+
+void updateTrackCoord(int x, int y, Speed *obj);
+
+void setTrackSpeed(Speed *obj);
+
+void resetState(objectCoord *obj);
+
+void stopTracks();
 
 Point convert_angle(int angle);
 

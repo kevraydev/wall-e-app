@@ -6,16 +6,13 @@ const appStore = useSettingStore()
 
 export const app = {
     connect: computed(() => appStore.getConnection),
-    video: computed(() => appStore.getVideoStatus),
+    video: computed(() => appStore.getVideoSettings),
     ip: computed(() => appStore.getSettingById(1)),
     joysticks: computed(() => appStore.getAllJoysticks),
     lastJoystickId: computed(() => appStore.getLastJoystick),
     options: computed(() => appStore.getAllServos),
     setStatus(value) {
         appStore.setConnection(value)
-    },
-    videoStatus(value) {
-        appStore.videoStatus(value)
     },
     updateIP(ip, port) {
             appStore.addItem('settings', {
@@ -24,6 +21,14 @@ export const app = {
               port: port,
             })
     },
+    updateVideo(status, width, height) {
+        appStore.addItem('video', {
+          id: 1,
+          show: status,
+          width: width || app.video.value.width,
+          height: height || app.video.value.height,
+        })
+},
     addJoystick(id, optionId, rest){
         appStore.addItem('joysticks', {
             id: id,
@@ -70,5 +75,8 @@ export async function fetchOptions() {
 
 
 export const getVideo = {
-    url: `http://${app.ip.value.ipaddress}:${app.ip.value.port}/video`
+    show: app.video.value.show,
+    url: `http://${app.ip.value.ipaddress}:${app.ip.value.port}/video`,
+    width: app.video.value.width,
+    height: app.video.value.height
 }

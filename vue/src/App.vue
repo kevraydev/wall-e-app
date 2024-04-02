@@ -2,17 +2,19 @@
   <router-view />
 </template>
 
-<script>
-import { defineComponent } from 'vue'
-import { useQuasar } from 'quasar'
+<script setup>
+//import { defineComponent } from 'vue'
+import { useQuasar } from 'quasar';
+//import { useWebSocket } from 'vue-websocket';
 import "animate.css"
-export default defineComponent({
-  name: 'App',
-  setup() {
-    const $q = useQuasar()
-    $q.dark.set(true)
-  }
-})
+//export default defineComponent({
+  //name: 'App',
+  //setup() {
+  //const webSocket = useWebSocket('/');
+    const $q = useQuasar();
+    $q.dark.set(true);
+ // }
+//})
 </script>
 
 <style>

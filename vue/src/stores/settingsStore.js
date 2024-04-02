@@ -11,19 +11,21 @@ export const useSettingStore = defineStore('appSettings', {
       [{id: 1, ipaddress: '192.168.0.1', port: '5000'}],
       /** @type Joystick[] */
       joysticks: LocalStorage.getItem('joysticks') || 
-      [{id: 1, ctrlId: 1, restLock: false}],
+      [{id: 1, ctrlId: 0, restLock: false},
+        {id: 2, ctrlId: 9, restLock: false}],
       /** @type Servo[] */
       servos: LocalStorage.getItem('servos') || 
       [{id: 1, label: ''}],
       connected: LocalStorage.getItem('connectStatus') === "true",
-      video: LocalStorage.getItem('video') === "true",
+      video: LocalStorage.getItem('video') ||
+      [{id: 1, show: false, width: 300, height: 300}],
   }),
   getters: {
     getConnection: (state) => {
       return state.connected
     },
-    getVideoStatus: (state) => {
-      return state.video
+    getVideoSettings: (state) => {
+      return state.video.find((videos) => videos.id === 1)//state.video
     },
     getSettingById: (state) => (id) => {
       return state.settings.find((setting) => setting.id === id)
@@ -83,10 +85,6 @@ export const useSettingStore = defineStore('appSettings', {
     setConnection(status){
       this.connected = status
       LocalStorage.set('connectStatus', status.toString())
-    },
-    videoStatus(status){
-      this.video = status
-      LocalStorage.set('video', status.toString())
     },
   },
 })

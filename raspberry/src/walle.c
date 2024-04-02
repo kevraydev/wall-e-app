@@ -1,7 +1,6 @@
 #include "robot.h"
 
-int state = 1;
-
+//int state = 0;
 void setup()
 {
   robot_init();
@@ -13,13 +12,12 @@ void walle()
 
     while(true)
     {
-      if(state)
+      if(!obj.state && !track.state)
       {
 
       }
-      else if(obj.area != 0)
+      else
       {
-
       
         clock_gettime(CLOCK_MONOTONIC, &currentTime);
 
@@ -29,9 +27,18 @@ void walle()
         if(elapsed > POLLING_RATE)
         {
           startTime = currentTime;
-          //updateHead(obj.x, obj.y, obj.area)
-          updateCoords(&obj);
- 
+          if(obj.state == 1)
+          {
+            updateCoords(&obj);
+          }
+
+          if(track.state == 1)
+          {
+            //updateCoords(&track);
+            setTrackSpeed(&track);
+          }
+          
+
         }
       }
     }
@@ -40,20 +47,43 @@ void walle()
 }
 
 
-void update(int angle)
+void update(int id, int angle)
 {
 
   Point coord;
   coord = convert_angle(angle);
-  obj.x = coord.x;
-  obj.y = coord.y;
-  obj.area = 1;
-  if(state != 0)
-    state = 0;
+  if(id == 0)
+  {
+    obj.x = coord.x;
+    obj.y = coord.y;
+    if(obj.state != 1)
+      obj.state = 1;
+  }
+  else if(id == 9) 
+  {
+    updateTrackCoord(coord.x, coord.y, &track);
+
+  }
+
+
 }
+
+//void updateServo(int id, int angle)
+//{
+//  setServo[id] = pulseWidth(id, angle);
+//  setServoAngle();
+//}
 
 void updateServo(int id, int angle)
 {
-  setServo[id] = pulseWidth(id, angle);
+  Point coord;
+  coord = convert_angle(angle);
+  //track.x = coord.x;
+  //  track.y = coord.y;
+  if(id == 0)
+  {
+    setServo[id] = pulseWidth(id, angle);
   setServoAngle();
+  }
+  
 }

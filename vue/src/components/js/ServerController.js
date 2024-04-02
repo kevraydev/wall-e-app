@@ -11,7 +11,7 @@ import { showNote } from './NotifyController'
  * @param {number} distance
  */
 export function controlServo(url, port, servo, angle, distance){
-    const status = ref(false) 
+    const status = ref(false)
     console.log(url, port, servo, angle, distance)
     api.post(`http://${url}:${port}/control`, {
       angle: angle,
@@ -26,6 +26,7 @@ export function controlServo(url, port, servo, angle, distance){
       })
   return status.value
 }
+
 
 /**
  * @param {string} url
@@ -45,7 +46,7 @@ export async function tryConnect(url, port){
     return true
   }
   catch(error){
-    showNote('Disconnected', 'negative', false, true)
+    showNote('Disconnected, check config', 'negative', false, true)
     return false
   }
   

@@ -1,15 +1,10 @@
 <template>
   <q-page class="fit column items-center">
-    <joystick-controller />
+    <MainController />
   </q-page>
 </template>
 
-<script>
-import JoystickController from 'src/components/JoystickController.vue';
-import { defineComponent } from 'vue'
+<script setup>
+import MainController from 'src/components/MainController.vue';
 
-export default defineComponent({
-  name: 'IndexPage',
-  components: { JoystickController },
-})
 </script>
