@@ -75,8 +75,5 @@ export async function fetchOptions() {
 
 
 export const getVideo = {
-    show: app.video.value.show,
     url: `http://${app.ip.value.ipaddress}:${app.ip.value.port}/video`,
-    width: app.video.value.width,
-    height: app.video.value.height
 }

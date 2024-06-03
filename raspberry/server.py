@@ -5,8 +5,15 @@ from flask_cors import CORS
 import cv2
 import ctypes
 from ctypes import cdll, c_void_p, c_int
+import threading
+from edge_impulse_linux.image import ImageImpulseRunner
+runner = ImageImpulseRunner('./model.eim')
+model_info = runner.init()
+print('Loaded runner for "' + model_info['project']['owner'] + ' / ' + model_info['project']['name'] + '"')
+labels = model_info['model_parameters']['labels']
 
 lib = cdll.LoadLibrary("./src/libwalle.so")
+
 
 class Image(ctypes.Structure):
     _fields_ = [("addr", ctypes.POINTER(ctypes.c_ubyte)),
@@ -17,9 +24,7 @@ class Color(ctypes.Structure):
     _fields_ = [("b", ctypes.c_ubyte),
                 ("g", ctypes.c_ubyte),
                 ("r", ctypes.c_ubyte)]
-#lib.modify_image.argtypes = (ctypes.POINTER(Image), ctypes.c_int, ctypes.c_int, Color)
-#lib.run_impulse.argtypes = [ctypes.POINTER(Image), Color]
-#lib.run_impulse.restype = ctypes.c_int32
+
 lib.sendData.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.c_int]
 lib.setup()
 
@@ -49,7 +54,7 @@ movement = [
     {'id': 10, 'label': 'Stop Tracks'}
     ]
 
-
+    
 def map_range(v, a, b, c, d):
        return (v-a) / (b-a) * (d-c) + c
 
@@ -57,39 +62,34 @@ def control_movement(angle, key, distance):
     if distance == 0:
         lib.updateServo(key, angle)
     else:
-    lib.update(key, angle)
+        lib.update(key, angle)
+    
 
-#def run_impulse(img, box_color):
-    #lib.run_impulse.argtypes = [ctypes.POINTER(Image), Color]
-    #lib.run_impulse.restype = ctypes.c_int32
-
-    #ret = lib.run_impulse(ctypes.byref(img), box_color)
-    #if ret != 0:
-        #print(f"Error running impulse: {ret}")
-        #return None
-
-    #return ret
 
 def gen_frames():
     while True:
         success, frame = camera.read()
-        #frame = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         #frame = cv2.resize(frame, (320, 240))
         if not success:
             break
         else:
-            #img = Image(frame.ctypes.data_as(ctypes.POINTER(ctypes.c_ubyte)), frame.shape[1], frame.shape[0])
-    
-            block_size = 10
-            spacing = 15
-            color = Color(205, 155, 235) # White color
-            #lib.modify_image(ctypes.byref(img), block_size, spacing, color)
-            #box_color = Color(0, 255, 0)  # Green
-            #print(lib.run_impulse(ctypes.byref(img), color))
-            #print(run_impulse(img, box_color))
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            features, cropped = runner.get_features_from_image(frame)
+            res = runner.classify(features)
+            c = 5
+            if "classification" in res["result"].keys():
+                    print('Result (%d ms.) ' % (res['timing']['dsp'] + res['timing']['classification']), end='')
+                    for label in labels:
+                        score = res['result']['classification'][label]
+                        print('%s: %.2f\t' % (label, score), end='')
+                    print('', flush=True)
+            
+            elif "bounding_boxes" in res["result"].keys():
+                for bb in res["result"]["bounding_boxes"]:
+                    frame = cv2.rectangle(frame, (bb['x']*(c+3), bb['y']*c), (bb['x']*(c+3) + bb['width']*c, bb['y']*c + bb['height']*c), (255, 0, 0), 1)
 
+            frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
             ret, buffer = cv2.imencode('.jpg', frame)
-
             new_frame = buffer.tobytes()
             yield (b'--frame\r\n'
                 b'Content-Type: image/jpeg\r\n\r\n' + new_frame + b'\r\n')

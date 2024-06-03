@@ -38,8 +38,7 @@
                                         <q-expansion-item :content-inset-level="0.5" expand-separator>
                                             <q-badge color="primary" text-color="black" class="subListItem">Rest Lock:
                                                 {{ item.restLock }}</q-badge>
-                                            <q-badge color="primary" text-color="black" class="subListItem">Ctrl Num: {{
-                item.ctrl }}</q-badge>
+                                            <q-badge color="primary" text-color="black" class="subListItem">Ctrl Num: {{item.ctrl }}</q-badge>
                                         </q-expansion-item>
                                         <q-btn flat icon="cancel" @click="removeItem(item.id)" class="q-pl-sm"
                                             size="1.2rem" color="primary" />
@@ -97,9 +96,6 @@ import { app, getJoySticks } from './js/StoreController'
     const { joystickList } = getJoySticks();
 
     const options = app.options
-   // if(options.value[0].label == null)
-    //  options.value[0].label = 'No controls'
-    //if(options.value[0].label == '')
 
     servo.value = options.value[0].label
 

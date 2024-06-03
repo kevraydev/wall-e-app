@@ -1,6 +1,6 @@
 <template>
   <div v-if="app.connect.value">
-    <img class="q-pt-md" v-if="app.video.value.show" :src="app.video.value.url"
+    <img class="q-pt-md" v-if="app.video.value.show" :src="getVideo.url"
     :height="app.video.value.height" :width="app.video.value.width">
   </div>
   <div class="fit row wrap justify-center q-mt-xl">
@@ -18,7 +18,7 @@
 <script setup>
 import nipplejs from 'nipplejs'
 import { controlServo } from './js/ServerController'
-import { app, getJoySticks } from './js/StoreController'
+import { app, getJoySticks, getVideo } from './js/StoreController'
 import { onMounted, onUnmounted } from 'vue'
 import { tryConnect } from "../components/js/ServerController"
 
@@ -52,6 +52,7 @@ const timeJstClear = () => {
     clearInterval(timerId)
   }
 }
+
 const sendJoystickValue = (id, ctrl, data) => {
     let angle = (Math.round(data.angle.degree))
     let distance = Math.round(data.distance)

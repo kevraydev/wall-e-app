@@ -29,7 +29,9 @@ void walle()
           startTime = currentTime;
           if(obj.state == 1)
           {
-            updateCoords(&obj);
+            //updateCoords(&obj);
+            updateHead(obj.x, obj.y);
+            //updateNeckServos();
           }
 
           if(track.state == 1)
@@ -58,6 +60,7 @@ void update(int id, int angle)
     obj.y = coord.y;
     if(obj.state != 1)
       obj.state = 1;
+    
   }
   else if(id == 9) 
   {
@@ -66,6 +69,14 @@ void update(int id, int angle)
   }
 
 
+}
+
+void setHeadxy(int x, int y)
+{
+  obj.x = coord.x;
+  obj.y = coord.y;
+  if(obj.state != 1)
+    obj.state = 1;
 }
 
 //void updateServo(int id, int angle)

@@ -147,7 +147,7 @@ else
 
   updateState(left, right);
   
-  tft.println(left);
+  //tft.println(left);
 
   //if (left < 8)
   //  leftSpeed *= -1;
