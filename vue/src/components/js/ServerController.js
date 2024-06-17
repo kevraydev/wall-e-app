@@ -1,5 +1,5 @@
 // @ts-check
-import { api } from 'boot/axios'
+import { api } from '../../boot/axios'
 import { ref } from 'vue'
 import { showNote } from './NotifyController'
 

@@ -6,7 +6,7 @@
 //import { defineComponent } from 'vue'
 import { useQuasar } from 'quasar';
 //import { useWebSocket } from 'vue-websocket';
-import "animate.css"
+//import "animate.css"
 //export default defineComponent({
   //name: 'App',
   //setup() {
