@@ -29,22 +29,7 @@ Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_RST);
 unsigned long last = 0;
 unsigned long lastUpdate = 0;
 
-// Control ID - Default POS - Current POS - Min POS - Max POS
-/*
-int controls[9][5] = {
-  {0, 90, 90, 10, 175},//Head
-  {1, 90, 90, 25, 170},//Neck
-  {2, 95, 95, 50, 95},//Left Eye
-  {3, 95, 95, 65, 95},//Right Eye
-  {4, 180, 180, 1, 180},//Left Track
-  {5, 120, 130, 1, 180},//Left Arm
-  {6, 1, 1, 1, 180},//Right Track
-  {7, 55, 55, 1, 180},//Right Arm
-  {8, 130, 130, 20, 170},//Bottom Neck
-};
-*/
-//uint16_t leftSpeed;
-//uint16_t rightSpeed;
+int sensorValue2 = 0;
 int motorState = 0;
 
 void setup(void)
@@ -64,9 +49,6 @@ void setup(void)
   tft.drawBitmap(6, 20, walle_icon, 31, 30, 0xFFE0);
 
   tft.println("SOLAR CHARGE LEVEL");
-  // pwmController.resetDevices();
-  // pwmController.init();
-  // pwmController.setPWMFrequency(50);
 
   pinMode(ENA, OUTPUT);
   pinMode(IN1, OUTPUT);
@@ -78,26 +60,33 @@ void setup(void)
   delay(100);
    //mPlayer.play(1);
   // delay(1500);
-  // initPOS();
-  // delay(1500);
 }
 
 void loop()
 {
-  //String dataIn = "";
+
   if (Serial.peek() > 0)
   {
-    //dataIn = Serial.readStringUntil('\n');
+
     int x = Serial.read();
-    int value1 = (x & 0b11110000) >> 4;//dataIn.substring(0, 3).toInt();
-    int value2 = (x & 0b00001111);//dataIn.substring(3, 7).toInt();
-    //int ctrlId = dataIn.substring(7, 10).toInt();
+    int value1 = (x & 0b11110000) >> 4;
+    int value2 = (x & 0b00001111);
+
 
     if (value1 > 0 && value2 > 0)
     {
 
       updateTracks(value1, value2);
       lastUpdate = millis();
+    }
+    else if(value1 == 0 && value2 == 1)
+    {
+        int sensorValue = analogRead(A6);
+        int angle = mapf(sensorValue, 30, 900, 175, 25);//mapRange(35,950,180,10, sensorValue);
+        //tft.println(angle);
+        delay(5);
+        Serial.write(angle);
+        delay(5);
     }
     else if(value1 == 1 && value2 == 0)
     {
@@ -129,9 +118,7 @@ float mapf(float x, float in_min, float in_max, float out_min, float out_max)
 
 void updateTracks(int left, int right)
 {
-  // if((unsigned long)(millis() - lastUpdate) >= 500) {
-  //   Serial.print("Time ");
-  //  Serial.println((unsigned long)(millis() - lastUpdate));
+
 int leftSpeed = 0;
 int rightSpeed = 0;
 
@@ -255,11 +242,6 @@ void updateState(int left, int right)
     }
 }
 
-// void changeSpeed(int left, int right)
-//{
-//   analogWrite(ENA, left);
-//   analogWrite(ENB, right);
-// }
 void changeleft(int left)
 {
   analogWrite(ENA, left);

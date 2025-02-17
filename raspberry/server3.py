@@ -20,9 +20,9 @@ class image(ctypes.Structure):
                 ("width", ctypes.c_int),
                 ("height", ctypes.c_int)]
 lib.process_Image.argtypes = [ctypes.POINTER(image)]
-lib.updateHeadXY.argtypes = [ctypes.c_int, ctypes.c_int]
+#lib.updateHeadXY.argtypes = [ctypes.c_int, ctypes.c_int]
 
-lib.setup()
+#lib.setup()
 cx = int(640/96)
 cy = int(480/96)
 
@@ -38,6 +38,7 @@ class VideoCapture:
         self.cap.set(cv2.CAP_PROP_FPS, 32)
         self.x = 0
         self.y = 0
+        self.fomo = False
         (self.grabbed, self.frame) = self.cap.read()
         t = threading.Thread(target=self._reader)
         t.daemon = True
@@ -46,18 +47,20 @@ class VideoCapture:
     def _reader(self):
         while True:
             (self.grabbed, self.frame) = self.cap.read()
-            x,y = self.get_XY()
+            if self.fomo:
+                x,y = self.get_XY()
             
-            if x and y is not 0:
-                print(x,y)
-                lib.setHeadxy(x, y)
-                self.x = 0
-                self.y = 0
-            #walle()
+                if x and y is not 0:
+                    print(x,y)
+                    #lib.setHeadxy(x, y)
+                    self.x = 0
+                    self.y = 0
+                #walle()
     
-    def read(self, fomo = False):
-        res = run_fomo(self.frame)
-        self.x, self.y = fomo_coords(res, 0.95, self.frame)
+    def read(self):
+        if self.fomo:
+            res = run_fomo(self.frame)
+            self.x, self.y = fomo_coords(res, 0.95, self.frame)
         return self.frame
 
     def get_XY(self):
@@ -87,14 +90,14 @@ def control_movement(angle, key, distance):
     if distance == 0:
         lib.updateServo(key, angle)
     else:
-        lib.update(key, angle)
+        lib.update(key, angle, distance)
 
 def walle():
     lib.walle()
 
 def gen_frames():
     while True:
-        frame = cap.read(fomo = True)
+        frame = cap.read()
         #res = run_fomo(frame)
         #x, y = fomo_coords(res, 0.90, frame)
         #lib.updateHeadXY(x,y)

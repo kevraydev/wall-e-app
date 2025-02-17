@@ -22,19 +22,13 @@ import { app, getJoySticks, getVideo } from './js/StoreController'
 import { onMounted, onUnmounted } from 'vue'
 import { tryConnect } from "../components/js/ServerController"
 
-let jstTag = []
-let timerId = null;
+let lastJst = {}
 
 onMounted(() => {
   if(!app.connect.value){
     checkConnect()
   }
-  timeJstClear()
-  timerId = setInterval(sendData, 50)
-})
 
-onUnmounted(() => {
-  timeJstClear()
 })
 
 const { joystickList } = getJoySticks()
@@ -46,41 +40,19 @@ const checkConnect = () => {
   })
 }
 
-const timeJstClear = () => {
-  if(app.connect.value){
-  if(timerId != null)
-    clearInterval(timerId)
-  }
-}
-
 const sendJoystickValue = (id, ctrl, data) => {
+  let status = false
     let angle = (Math.round(data.angle.degree))
     let distance = Math.round(data.distance)
     
     if (distance == 0)
       distance = 1
+    const currentTime = Date.now()
+    if (!lastJst[id] || (currentTime - lastJst[id] >= 15)) {
 
-      jstTag[id] = {ctrl, angle, distance}
-}
-
-const sendData = () => {
-  let status = false
-
-  if(jstTag.length > 0 && app.connect.value){
-    for(let jst in jstTag){
-      status = controlServo(app.ip.value.ipaddress, app.ip.value.port, jstTag[jst].ctrl, jstTag[jst].angle, jstTag[jst].distance)
-      console.log(jstTag[jst])
+      status = controlServo(app.ip.value.ipaddress, app.ip.value.port, ctrl, angle, distance)
+      lastJst[id] = currentTime
     }
-    //if(!status)
-    //  checkConnect()
-  }
-}
-
-const removeJst = (id) => {
-    if(jstTag[id]){
-      jstTag.splice(id,1)
-    }
-    console.log(jstTag)
 }
 
 const addJoystick = (el, joystickId, restlock, ctrlNum) => {
@@ -93,7 +65,7 @@ const initJoystick = (el, stickId, restlock, ctrlNum) => {
   const options = {
     zone: el,
     color: "white",
-    size: 115,
+    size: 145,
     mode: "static",
     dynamicPage: true,
     //lockX: true
@@ -105,9 +77,7 @@ const initJoystick = (el, stickId, restlock, ctrlNum) => {
   joystick.on('move', (evt, data) => {
     sendJoystickValue(stickId, ctrlNum, data)
   });
-  joystick.on('end', (evt, data) => {
-    removeJst(stickId)
-  })
+
 }
 
 </script>

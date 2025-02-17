@@ -8,26 +8,47 @@
 #include <math.h>
 #include <time.h>
 #include <stdio.h>
+#include "queue.h"
+
 
 int fd;
+int state = 0;
+int animate = 0;
 extern int addr;
-#define POLLING_RATE 1
+#define POLL_RATE 250
+#define WAIT_T 15000
 #define CAM_WIDTH 640
 #define CAM_HEIGHT 480
 #define CAM_WIDTH_F 320
 #define CAM_HEIGHT_F 240
 #define LOW_SPEED 60
 #define STEP_COUNT 10
+
+#define TOP_HEAD 0
+#define UPPER_NECK 1
+#define LEFT_EYE 2
+#define RIGHT_EYE 3
+#define LEFT_TRACK 4
+#define LEFT_ARM 5
+#define RIGHT_TRACK 6
+#define RIGHT_ARM 7
+#define BOTTOM_NECK 8
+
+#define A1 139
+#define A2 63
+#define EASING 0.20
 #define mapRange(a1,a2,b1,b2,s) (b1 + (s-a1)*(b2-b1)/(a2-a1))
 #define constrain(amt,low,high) ((amt)<(low)?(low):((amt)>(high)?(high):(amt)))
+#define rows(a) (sizeof(a)) / (sizeof(a[0]))
 #define MIN(a,b) ((a) < (b)  ? (a) : (b) )
 #define MAX(a,b) ((a) > (b)  ? (a) : (b) )
 #define s(a) ((a) * (a))
 #define RADTODEG(a) ((a)*(180.0)/(M_PI))
 #define easeIn(x) ((1) - cos((x * M_PI) / (2)))
 #define sl(a,b,c) ((1 - c) * (a) + (c) * (b))
-//p = slerp(p, 100, easeIn(0.3));
-struct timespec startTime, currentTime;
+
+
+//struct timespec startTime, currentTime;
 int serial_port;
 
 extern unsigned int setServo[_PCA9685_CHANS];
@@ -35,7 +56,10 @@ extern unsigned int offVals[_PCA9685_CHANS];
 
 extern int controls[9][3];
 
-//typedef struct PD PD;
+typedef struct {
+    struct timespec startTime;
+    struct timespec currentTime;
+} Timer;
 
 typedef struct {
     double x;
@@ -48,30 +72,24 @@ typedef struct {
     int state;
 } Speed;
 
-typedef struct objectCoord {
-    int state;
-    int x;
-    int y;
-} objectCoord;
+/*typedef struct State {
+    int trackingState;
+    int joystickState;
+} State;*/
 
 typedef struct Servo {
-    float prevError;
     float targetPos;
     float pos;
+    float easing;
+    int timer;
     int min;
     int max;
-    float p;
-	float d;
 } Servo;
 
-struct Servo servos[6];
-
-objectCoord obj;
+//State obj;
 Speed track;
 
-Servo posX;
-Servo posY;
-Servo tilt;
+Servo s[9];
 
 typedef struct {
     uint8_t* addr;
@@ -158,12 +176,31 @@ Point bGrid;
     p[2] = _color[2]; \
 })
 
+void setTime(Timer *time);
+
+long getTime(Timer *time);
+
+void updateTime(Timer *time);
+
+int checkCommand();
+
+void setCommand(int d)
 
 void robot_init();
 
+void eyeCalibration(Queue* queue);
+
+void enqueueAnimation(Queue* queue, int arr[][10], int rows);
+
+void moveBody(Queue* queue, int command);
+
 void delay(int mili);
 
-void sendData(int value1, int value2);
+void updateTrackData(int left, int right);
+
+void checkQueue(Queue* queue);
+
+void sendData(int v1, int v2);
 
 void closeSerial();
 
@@ -171,23 +208,27 @@ uint16_t pulseWidth(int channel, float degree);
 
 void setServoAngle();
 
-void initPOS();
+uint8_t sendCommand(int op1, int op2);
 
-void eyeCalibration();
+void initPOS();
 
 int initHardware(int adpt, int addr, int freq);
 
-void updateHead(int x, int y);
+void solveIK(int y, int d, double *theta1, double *theta2);
 
-void updateNeckServos();
+void updateHead(int x, int y, int d);
 
-void updateCoords(objectCoord* obj);
+void updatePos(Servo* position, float easedAmt);
 
-void updateTrackCoord(int x, int y, Speed *obj);
+void updateBodyPos();
 
-void setTrackSpeed(Speed *obj);
+int checkBodyPos(Servo *serv, int channel);
 
-void resetState(objectCoord *obj);
+void updateTrackCoord(int x, int y);
+
+void setTrackSpeed();
+
+void resetState();
 
 void stopTracks();
 
