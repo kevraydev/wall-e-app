@@ -10,12 +10,11 @@
 #include <stdio.h>
 #include "queue.h"
 
-
 int fd;
-int state = 0;
-int animate = 0;
+int state;
+int animate;
 extern int addr;
-#define POLL_RATE 250
+#define POLL_RATE 20
 #define WAIT_T 15000
 #define CAM_WIDTH 640
 #define CAM_HEIGHT 480
@@ -23,25 +22,16 @@ extern int addr;
 #define CAM_HEIGHT_F 240
 #define LOW_SPEED 60
 #define STEP_COUNT 10
-
-#define TOP_HEAD 0
-#define UPPER_NECK 1
-#define LEFT_EYE 2
-#define RIGHT_EYE 3
-#define LEFT_TRACK 4
-#define LEFT_ARM 5
-#define RIGHT_TRACK 6
-#define RIGHT_ARM 7
-#define BOTTOM_NECK 8
-
+//
 #define A1 139
 #define A2 63
-#define EASING 0.20
+#define EASING 0.14
 #define mapRange(a1,a2,b1,b2,s) (b1 + (s-a1)*(b2-b1)/(a2-a1))
 #define constrain(amt,low,high) ((amt)<(low)?(low):((amt)>(high)?(high):(amt)))
 #define rows(a) (sizeof(a)) / (sizeof(a[0]))
 #define MIN(a,b) ((a) < (b)  ? (a) : (b) )
 #define MAX(a,b) ((a) > (b)  ? (a) : (b) )
+#define ABS_DIFF(x, y) ((x) > (y) ? (x) - (y) : (y) - (x))
 #define s(a) ((a) * (a))
 #define RADTODEG(a) ((a)*(180.0)/(M_PI))
 #define easeIn(x) ((1) - cos((x * M_PI) / (2)))
@@ -72,11 +62,6 @@ typedef struct {
     int state;
 } Speed;
 
-/*typedef struct State {
-    int trackingState;
-    int joystickState;
-} State;*/
-
 typedef struct Servo {
     float targetPos;
     float pos;
@@ -86,7 +71,6 @@ typedef struct Servo {
     int max;
 } Servo;
 
-//State obj;
 Speed track;
 
 Servo s[9];
@@ -164,6 +148,7 @@ Point bGrid;
     ((uint16_t *) _image->addr)[(_image->width * _y) + _x] = _v; \
 })
 
+
 #define PUT_PIXEL(image, x, y, color) \
 ({ \
     __typeof__ (image) _image = (image); \
@@ -175,7 +160,7 @@ Point bGrid;
     p[1] = _color[1]; \
     p[2] = _color[2]; \
 })
-
+//
 void setTime(Timer *time);
 
 long getTime(Timer *time);
@@ -184,13 +169,13 @@ void updateTime(Timer *time);
 
 int checkCommand();
 
-void setCommand(int d)
+void setCommand(int d);
 
 void robot_init();
 
 void eyeCalibration(Queue* queue);
 
-void enqueueAnimation(Queue* queue, int arr[][10], int rows);
+void enqueueAnimation(Queue* queue, int arr[][10], int rows, float speed);
 
 void moveBody(Queue* queue, int command);
 
@@ -222,7 +207,7 @@ void updatePos(Servo* position, float easedAmt);
 
 void updateBodyPos();
 
-int checkBodyPos(Servo *serv, int channel);
+int checkBodyPos(Servo* serv, int channel);
 
 void updateTrackCoord(int x, int y);
 

@@ -3,6 +3,7 @@
 void walle() {
   Queue* lq = initQueue();
   robot_init();
+  //
   eyeCalibration(lq);
   
   Timer time_s, time_w;
@@ -14,9 +15,9 @@ void walle() {
     if(getTime(&time_s) > POLL_RATE) {
       updateTime(&time_s);
       int command = checkCommand();
-      moveBody(lq, command);
+      moveBody(lq, 1);
 
-      if(command) {
+ /*     if(command) {
         if(getTime(&time_w) > WAIT_T) {
           //
         }
@@ -25,11 +26,11 @@ void walle() {
       else {
         setCommand(1);
         setTime(&time_w);
-      }
+      }*/
 
     }
   }
-   
+
   dequeueAll(lq);
   free(lq);
   return;

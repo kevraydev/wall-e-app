@@ -18,18 +18,7 @@ int addr = 0x40;
 unsigned int setServo[_PCA9685_CHANS] = {0};
 unsigned int offVals[_PCA9685_CHANS] = {0};
 
-// Servo Motor Values (Default POS) - (Min POS) - (Max POS)
-/*int controls[9][3] = {
-    {100, 25, 175}, // Head
-    {90, 25, 110},  // Upper Neck
-    {95, 50, 95},   // Left Eye
-    {95, 65, 95},   // Right Eye
-    {180, 1, 180},  // Left Track
-    {120, 1, 180},  // Left Arm
-    {1, 1, 180},    // Right Track
-    {55, 1, 180},   // Right Arm
-    {130, 30, 170}, // Bottom Neck
-};*/
+
 
 void setTime(Timer *time){
     clock_gettime(CLOCK_MONOTONIC, &time->startTime);
@@ -69,16 +58,19 @@ void robot_init() {
     serialFlush(serial_port);
 
     fd = initHardware(1, addr, 50);
+    state = 0;
+    animate = 0;
     sleep(1);
 
     for(int i = 0; i < 9; i++) {
-        s[i].pos = controls[i][0];
+        s[i].pos = (controls[i][1] + controls[i][2])/2;
         s[i].easing = EASING;
         s[i].min = controls[i][1];
         s[i].max = controls[i][2];
+        s[i].targetPos = controls[i][0];
     }
-    s[UPPER_NECK].targetPos = controls[1][0];
-    s[BOTTOM_NECK].targetPos = controls[8][0];
+    //s[R_].targetPos = U_NECK_DEF;
+    //s[BOTTOM_NECK].targetPos = B_NECK_DEF;
 
     bGrid.y = 550;
     bGrid.x = 270;
@@ -94,7 +86,7 @@ void robot_init() {
     //r_image.height = CAM_HEIGHT;
      initPOS();
 }
-
+//
 void moveBody(Queue* queue, int command) {
 
     if(queueNotEmpty(queue)) {
@@ -120,7 +112,6 @@ void delay(int mili) {
     usleep(mili * 1000);
 }
 
-
 void updateTrackData(int left, int right) {
     int leftSpeed = 0;
     int rightSpeed = 0;
@@ -143,12 +134,12 @@ void checkQueue(Queue* queue) {
     if(!animate && queue->front) {
         if(queue->front->startDelay == 0) {
             for(int i = 0; i < 9; i++) {
-            if(queue->front->servoId[i] != 0) {
-                if(s[i].pos != queue->front->servoId[i]) {
-                    s[i].targetPos = queue->front->servoId[i];
-                    //s[i].easing = queue->front->servoSpeed;
-                } 
-            }
+                if(queue->front->servoId[i] != 0) {
+                    if(s[i].pos != queue->front->servoId[i]) {
+                        s[i].targetPos = queue->front->servoId[i];
+                    }
+                    s[i].easing = queue->front->servoSpeed; 
+                }
             }
             dequeue(queue, queue->front->key);
         } else
@@ -194,14 +185,14 @@ uint8_t sendCommand(int op1, int op2) {
             timeoutCounter++;
             sendData(op1, op2);
 
-            if (timeoutCounter > 5) {
+            if (timeoutCounter > 200) {
                 printf("Timeout: No response\n");
                 break;
             }
         }
     }
 
-    if (timeoutCounter <= 5) {
+    if (timeoutCounter <= 200) {
         return response;
     }
 
@@ -213,28 +204,28 @@ void initPOS() {
     res = sendCommand(0, 1);
     if(res != 0) {
         s[TOP_HEAD].pos = constrain(res, s[TOP_HEAD].min, s[TOP_HEAD].max);
-        s[TOP_HEAD].targetPos = controls[0][0];
+        s[TOP_HEAD].targetPos = HEAD_DEF;//controls[0][0];
     }
 }
 
 void eyeCalibration(Queue* queue) {
 
-    enqueueAnimation(queue, a0, rows(a0));
+    enqueueAnimation(queue, a0, rows(a0), 0.43);
 
 }
-
-void enqueueAnimation(Queue* queue, int arr[][10], int rows) {
+//
+void enqueueAnimation(Queue* queue, int arr[][10], int rows, float speed) {
 
     for(int i = 0; i < rows; i++) {
         int q[9];
         int delay = 0;
         for(int k = 0; k < 10; k++) {
-            if(k != 9)
+            if(k < 9)
                 q[k] = arr[i][k];
             else
                 delay = arr[i][k];
         }
-        enqueue(queue, q, EASING, delay);
+        enqueue(queue, q, speed, delay);
     }
 }
 
@@ -273,9 +264,12 @@ void updateHead(int x, int y, int d) {
     }
 }
 
-void updatePos(Servo *position, float easedAmt) {
-    if(easedAmt == 0)
-        easedAmt = EASING;
+void updatePos(Servo* position, float easedAmt) {
+    if(easedAmt < 0.05)
+        easedAmt = 0.05;
+    else if(easedAmt > 0.50)
+        easedAmt = 0.50;
+
     float posEased = sl(position->pos, position->targetPos, easeIn(easedAmt));
 
     if(position->pos < position->targetPos) {
@@ -292,34 +286,25 @@ void updatePos(Servo *position, float easedAmt) {
     }
 }
 
-/*int checkHeadPos() {
-    if(s[UPPER_NECK].pos != s[UPPER_NECK].targetPos || s[BOTTOM_NECK].pos != s[BOTTOM_NECK].targetPos || s[TOP_HEAD].pos != s[TOP_HEAD].targetPos)
-        return 1;
-    return 0;
-}
-*/
-/*
-int checkBodyPos(Servo *serv, int channel) {
-    if(serv[channel].pos != serv[channel].targetPos)
-        return 1;
-    return 0;
-}
-*/
-int checkBodyPos(Servo *serv, int channel) {
-    if(serv[channel]->pos != serv[channel]->targetPos) {
-        updatePos(&serv[channel], serv[channel]->easing);
+int checkBodyPos(Servo* serv, int channel) {
+    float diff = ABS_DIFF(serv[channel].pos, serv[channel].targetPos);
+    if(diff > 0.35) {
+        updatePos(&serv[channel], serv[channel].easing);
+        if(channel == RIGHT_TRACK){
+            printf("%0.2f\n", serv[RIGHT_TRACK].targetPos);
+        }
         if(channel == TOP_HEAD) {
-            if(serv[UPPER_NECK]->pos > 100 && serv[BOTTOM_NECK]->pos > 90) {
-                if(serv[TOP_HEAD]->pos >= 130)
+            if(serv[UPPER_NECK].pos > 100 && serv[BOTTOM_NECK].pos > 90) {
+                if(serv[TOP_HEAD].pos >= 130)
                     setServo[0] = pulseWidth(TOP_HEAD, 130);
-                if(serv[TOP_HEAD]->pos <= 70)
+                if(serv[TOP_HEAD].pos <= 70)
                     setServo[0] = pulseWidth(TOP_HEAD, 70);
             }
             else
-                setServo[0] = pulseWidth(TOP_HEAD, (int)serv[TOP_HEAD]->pos);
+                setServo[channel] = pulseWidth(TOP_HEAD, (int)serv[TOP_HEAD].pos);
         } 
         else
-            setServo[channel] = pulseWidth(channel, (int)serv[channel]->pos);
+            setServo[channel] = pulseWidth(channel, (int)serv[channel].pos);
         if(!animate)
             animate = 1;
         return 1;
@@ -332,45 +317,16 @@ void updateBodyPos() {
     int cnt = 0;
 
     for(int i = 1; i < 9; i++) {
-        cnt += checkBodyPos(&s, i);
+        cnt += checkBodyPos(s, i);
     }
-    cnt += checkBodyPos(&s, TOP_HEAD);
+    cnt += checkBodyPos(s, TOP_HEAD);
+    
     if(cnt) {
         setServoAngle(); 
     } 
     else
         resetState();
 }
-    /*
-    if(checkHeadPos()) {
-        if(s[UPPER_NECK].pos != s[UPPER_NECK].targetPos) {
-            updatePos(&s[UPPER_NECK], s[UPPER_NECK].easing);
-            setServo[UPPER_NECK] = pulseWidth(UPPER_NECK, (int)s[UPPER_NECK].pos);
-        }
-        if(s[BOTTOM_NECK].pos != s[BOTTOM_NECK].targetPos) {
-            updatePos(&s[BOTTOM_NECK], s[BOTTOM_NECK].easing);
-            setServo[BOTTOM_NECK] = pulseWidth(BOTTOM_NECK, (int)s[BOTTOM_NECK].pos);
-        }
-        
-
-        if(s[TOP_HEAD].pos != s[TOP_HEAD].targetPos) {
-            updatePos(&s[TOP_HEAD], s[TOP_HEAD].easing);
-
-            if(s[UPPER_NECK].pos > 100 && s[BOTTOM_NECK].pos > 90) {
-                if(s[TOP_HEAD].pos >= 130)
-                    setServo[0] = pulseWidth(TOP_HEAD, 130);
-                if(s[TOP_HEAD].pos <= 70)
-                    setServo[0] = pulseWidth(TOP_HEAD, 70);
-            }
-            else
-                setServo[0] = pulseWidth(TOP_HEAD, (int)s[TOP_HEAD].pos); 
-        }
-        setServoAngle();
-    }  
-    else
-        resetState();  */  
-
-
 
 void updateTrackCoord(int x, int y) {
     if(track.state != 1)
@@ -421,6 +377,10 @@ void resetState() {
         setServo[_PCA9685_CHANS] = 0;
         setServoAngle();
         animate = 0;
+        for(int i = 1; i < 9; i++) {
+            if(s[i].easing != EASING)
+                s[i].easing = EASING;
+        }
     }
 }
 

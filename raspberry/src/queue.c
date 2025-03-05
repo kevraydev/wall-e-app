@@ -46,7 +46,7 @@ void enqueue(Queue* queue, int *servo, float speed, int delay) {
         nServo->startDelay = delay;
     else
         nServo->startDelay = 0;
-    nServo->next = NULL; // Initialize next to NULL
+    nServo->next = NULL;
     
     if (queue->rear) {
         queue->rear->next = nServo;
