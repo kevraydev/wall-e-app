@@ -5,7 +5,7 @@
         <q-card style="width: 70%; height: 70%">
         <q-splitter
       v-model="splitterModel"
-      
+
     >
 
       <template v-slot:before>
@@ -26,8 +26,8 @@
           swipeable
           vertical
           transition-prev="jump-up"
-          transition-next="jump-up"
-        >
+          transition-next="jump-up">
+
           <q-tab-panel name="servos_tab">
             <div class="text-h4 q-mb-md">Control List</div>
             <q-card-section style="max-height: 20vh" class="scroll servoList">
@@ -62,7 +62,7 @@
                     <div class="q-px-sm"><q-btn color="primary" text-color="black"
                     label="Run Test"
                     @click="moveServo" />
-                
+
                     </div>
                     </q-card-section>
                     </div>
@@ -99,14 +99,14 @@ const servotab = ref('servos_tab');
     const { options } = getServos()
     selected.value = options.value[0].label
     const moveServo = () => {
-            
+
     let ctrlNum = 0
     if(selected.value.id === undefined)
         ctrlNum = options.value[0].id
     else
         ctrlNum = selected.value.id
     controlServo(props.url, props.port, ctrlNum, angle.value, 0)
-        
+
     }
 
 </script>

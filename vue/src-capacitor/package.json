@@ -1,0 +1,13 @@
+{
+  "name": "walle",
+  "version": "0.0.1",
+  "description": "Joystick control app for Wall-E Robot",
+  "author": "Kevin Ray",
+  "private": true,
+  "dependencies": {
+    "@capacitor/android": "^6.2.0",
+    "@capacitor/app": "^6.0.0",
+    "@capacitor/cli": "^6.0.0",
+    "@capacitor/core": "^6.0.0"
+  }
+}

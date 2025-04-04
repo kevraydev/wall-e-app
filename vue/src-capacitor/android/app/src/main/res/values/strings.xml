@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Wall-E App</string>
+    <string name="title_activity_main">Wall-E App</string>
+    <string name="package_name">com.example.walleapp</string>
+    <string name="custom_url_scheme">com.example.walleapp</string>
+</resources>

@@ -30,6 +30,27 @@ export function controlServo(url, port, servo, angle, distance){
 
 /**
  * @param {string} url
+ * @param {string} port
+ * @param {string} command
+ */
+
+export function sendCommand(url, port, command){
+  const status = ref(false)
+  api.post(`http://${url}:${port}/cmd`, {
+    command: command,
+    })
+    .then(res => {
+      status.value = true
+    })
+    .catch(error => {
+      console.error(error)
+    })
+return status.value
+}
+
+
+/**
+ * @param {string} url
  * @param {string} port 
  */
 export async function tryConnect(url, port){

@@ -82,6 +82,14 @@ movement = [
     {'id': 10, 'label': 'Stop Tracks'}
     ]
 
+audio = [
+    {'id': 1, 'label': 'Wall-E'},
+    {'id': 2, 'label': 'Whoa!'},
+    {'id': 3, 'label': 'Boot Up'},
+    {'id': 4, 'label': 'Grunt'},
+    {'id': 5, 'label': 'Ta-da!'},
+    {'id': 6, 'label': 'Music'}
+]
     
 def map_range(v, a, b, c, d):
        return (v-a) / (b-a) * (d-c) + c
